@@ -22,12 +22,8 @@ class ContestTest(AsyncTest):
         self.signup('contest6', 'contest6@test', 'test')  # acct_id = 9
         with AccountContext('admin@test', 'testtest') as admin_session:
             # upload more problem
-            await self.upload_problem('toj674.tar.xz', 'Move 1', ProConst.STATUS_CONTEST, expected_pro_id=7, session=admin_session)
-            await self.upload_problem('toj674.tar.xz', 'Move 2', ProConst.STATUS_CONTEST, expected_pro_id=8, session=admin_session)
-            await self.upload_problem('toj674.tar.xz', 'Move 3', ProConst.STATUS_CONTEST, expected_pro_id=9, session=admin_session)
-            await self.upload_problem('toj674.tar.xz', 'Move 4', ProConst.STATUS_CONTEST, expected_pro_id=10, session=admin_session)
-            await self.upload_problem('toj674.tar.xz', 'Move 5', ProConst.STATUS_CONTEST, expected_pro_id=11, session=admin_session)
-            await self.upload_problem('toj674.tar.xz', 'Move 6', ProConst.STATUS_CONTEST, expected_pro_id=12, session=admin_session)
+            for i in range(7, 12 + 1):
+                await self.upload_problem('toj674.tar.xz', f'Move {i - 6}', ProConst.STATUS_CONTEST, expected_pro_id=i, session=admin_session)
 
             res = admin_session.post('http://localhost:5501/contests/manage/add', data={
                 'reqtype': 'add',
