@@ -15,7 +15,7 @@ class ManageProSpecialScoreTest(AsyncTest):
 
         return pack_token
 
-    async def cf_style_special_score(self):
+    async def setup_basic_special_score_problem(self, expected_pro_id: int, checker_path: str):
         with AccountContext("admin@test", "testtest") as admin_session:
             res = admin_session.post('http://localhost:5501/manage/pro/add', data={
                 'reqtype': 'addpro',
@@ -23,11 +23,11 @@ class ManageProSpecialScoreTest(AsyncTest):
                 'status': ProConst.STATUS_ONLINE,
                 'mode': 'manual',
             })
-            self.assertEqual(res.text, '5')
+            self.assertEqual(res.text, str(expected_pro_id))
 
             res = admin_session.post('http://localhost:5501/manage/pro/update', data={
                 'reqtype': 'updatepro',
-                'pro_id': 5,
+                'pro_id': expected_pro_id,
                 'name': 'special score test',
                 'tags': '',
                 'status': ProConst.STATUS_ONLINE,
@@ -40,7 +40,7 @@ class ManageProSpecialScoreTest(AsyncTest):
 
             res = admin_session.post('http://localhost:5501/manage/pro/update', data={
                 'reqtype': 'updatelimit',
-                'pro_id': 5,
+                'pro_id': expected_pro_id,
                 'limits': json.dumps({
                     'default': {
                         'timelimit': 1000,
@@ -50,22 +50,46 @@ class ManageProSpecialScoreTest(AsyncTest):
             })
             self.assertEqual(res.text, 'S')
 
-            res = admin_session.post('http://localhost:5501/manage/pro/updatetests', data={
-                'reqtype': 'addtaskgroup',
-                'pro_id': 5,
-                'weight': 100, # NOTE: weight is not important, because we will be overwritten by the checker
-            })
-            self.assertEqual(res.text, 'S')
-
             # NOTE: In this case, the testcase is not important, but we need at least one testcase because without any test cases, the judge cannot function.
             inputfile_token = await self._upload_file('tests/static_file/toj3/3.in', admin_session)
             outputfile_token = await self._upload_file('tests/static_file/toj3/3.out', admin_session)
             res = admin_session.post('http://localhost:5501/manage/pro/updatetests', data={
                 'reqtype': 'addsinglefile',
-                'pro_id': 5,
+                'pro_id': expected_pro_id,
                 'filename': '1',
                 'input_pack_token': inputfile_token,
                 'output_pack_token': outputfile_token,
+            })
+            self.assertEqual(res.text, 'S')
+
+            # NOTE: add checker
+            pack_token = await self._upload_file(f'{checker_path}/res/check/check.cpp', admin_session)
+            res = admin_session.post('http://localhost:5501/manage/pro/filemanager', data={
+                'reqtype': 'addsinglefile',
+                'pro_id': expected_pro_id,
+                'filename': 'check.cpp',
+                'path': 'res/check',
+                'pack_token': pack_token,
+            })
+            self.assertEqual(res.text, 'S')
+            pack_token = await self._upload_file(f'{checker_path}/res/check/build', admin_session)
+            res = admin_session.post('http://localhost:5501/manage/pro/filemanager', data={
+                'reqtype': 'addsinglefile',
+                'pro_id': expected_pro_id,
+                'filename': 'build',
+                'path': 'res/check',
+                'pack_token': pack_token,
+            })
+            self.assertEqual(res.text, 'S')
+
+    async def cf_style_special_score(self):
+        with AccountContext("admin@test", "testtest") as admin_session:
+            await self.setup_basic_special_score_problem(5, 'tests/static_file/special_score')
+
+            res = admin_session.post('http://localhost:5501/manage/pro/updatetests', data={
+                'reqtype': 'addtaskgroup',
+                'pro_id': 5,
+                'weight': 100, # NOTE: weight is not important, because we will be overwritten by the checker
             })
             self.assertEqual(res.text, 'S')
 
@@ -74,26 +98,6 @@ class ManageProSpecialScoreTest(AsyncTest):
                 'pro_id': 5,
                 'testcase': '1',
                 'group': 0,
-            })
-            self.assertEqual(res.text, 'S')
-
-            # NOTE: add checker
-            pack_token = await self._upload_file('tests/static_file/special_score/res/check/check.cpp', admin_session)
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager', data={
-                'reqtype': 'addsinglefile',
-                'pro_id': 5,
-                'filename': 'check.cpp',
-                'path': 'res/check',
-                'pack_token': pack_token,
-            })
-            self.assertEqual(res.text, 'S')
-            pack_token = await self._upload_file('tests/static_file/special_score/res/check/build', admin_session)
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager', data={
-                'reqtype': 'addsinglefile',
-                'pro_id': 5,
-                'filename': 'build',
-                'path': 'res/check',
-                'pack_token': pack_token,
             })
             self.assertEqual(res.text, 'S')
 
@@ -128,111 +132,24 @@ class ManageProSpecialScoreTest(AsyncTest):
 
     async def cms_style_special_score(self):
         with AccountContext("admin@test", "testtest") as admin_session:
-            res = admin_session.post('http://localhost:5501/manage/pro/add', data={
-                'reqtype': 'addpro',
-                'name': 'special score test',
-                'status': ProConst.STATUS_ONLINE,
-                'mode': 'manual',
-            })
-            self.assertEqual(res.text, '6')
+            await self.setup_basic_special_score_problem(6, 'tests/static_file/special_score_cms')
 
-            res = admin_session.post('http://localhost:5501/manage/pro/update', data={
-                'reqtype': 'updatepro',
-                'pro_id': 6,
-                'name': 'special score (cms) test',
-                'tags': '',
-                'status': ProConst.STATUS_ONLINE,
-                'allow_submit': "true",
-                "is_makefile": "false",
-                "check_type": ProConst.CHECKER_CMS,
-                "rate_precision": 2,
-            })
-            self.assertEqual(res.text, 'S')
-
-            res = admin_session.post('http://localhost:5501/manage/pro/update', data={
-                'reqtype': 'updatelimit',
-                'pro_id': 6,
-                'limits': json.dumps({
-                    'default': {
-                        'timelimit': 1000,
-                        'memlimit': 65536,
-                    }
+            group_weights = [50, 25, 25]
+            for group_idx, weight in enumerate(group_weights):
+                res = admin_session.post('http://localhost:5501/manage/pro/updatetests', data={
+                    'reqtype': 'addtaskgroup',
+                    'pro_id': 6,
+                    'weight': weight,
                 })
-            })
-            self.assertEqual(res.text, 'S')
+                self.assertEqual(res.text, 'S')
 
-            res = admin_session.post('http://localhost:5501/manage/pro/updatetests', data={
-                'reqtype': 'addtaskgroup',
-                'pro_id': 6,
-                'weight': 50,
-            })
-            self.assertEqual(res.text, 'S')
-            res = admin_session.post('http://localhost:5501/manage/pro/updatetests', data={
-                'reqtype': 'addtaskgroup',
-                'pro_id': 6,
-                'weight': 25,
-            })
-            self.assertEqual(res.text, 'S')
-            res = admin_session.post('http://localhost:5501/manage/pro/updatetests', data={
-                'reqtype': 'addtaskgroup',
-                'pro_id': 6,
-                'weight': 25,
-            })
-            self.assertEqual(res.text, 'S')
-
-            # NOTE: In this case, the testcase is not important, but we need at least one testcase because without any test cases, the judge cannot function.
-            inputfile_token = await self._upload_file('tests/static_file/toj3/3.in', admin_session)
-            outputfile_token = await self._upload_file('tests/static_file/toj3/3.out', admin_session)
-            res = admin_session.post('http://localhost:5501/manage/pro/updatetests', data={
-                'reqtype': 'addsinglefile',
-                'pro_id': 6,
-                'filename': '1',
-                'input_pack_token': inputfile_token,
-                'output_pack_token': outputfile_token,
-            })
-            self.assertEqual(res.text, 'S')
-
-            res = admin_session.post('http://localhost:5501/manage/pro/updatetests?proid=1', data={
-                'reqtype': 'addsingletestcase',
-                'pro_id': 6,
-                'testcase': '1',
-                'group': 0,
-            })
-            self.assertEqual(res.text, 'S')
-            res = admin_session.post('http://localhost:5501/manage/pro/updatetests?proid=1', data={
-                'reqtype': 'addsingletestcase',
-                'pro_id': 6,
-                'testcase': '1',
-                'group': 1,
-            })
-            self.assertEqual(res.text, 'S')
-            res = admin_session.post('http://localhost:5501/manage/pro/updatetests?proid=1', data={
-                'reqtype': 'addsingletestcase',
-                'pro_id': 6,
-                'testcase': '1',
-                'group': 2,
-            })
-            self.assertEqual(res.text, 'S')
-
-            # NOTE: add checker
-            pack_token = await self._upload_file('tests/static_file/special_score_cms/res/check/check.cpp', admin_session)
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager', data={
-                'reqtype': 'addsinglefile',
-                'pro_id': 6,
-                'filename': 'check.cpp',
-                'path': 'res/check',
-                'pack_token': pack_token,
-            })
-            self.assertEqual(res.text, 'S')
-            pack_token = await self._upload_file('tests/static_file/special_score_cms/res/check/build', admin_session)
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager', data={
-                'reqtype': 'addsinglefile',
-                'pro_id': 6,
-                'filename': 'build',
-                'path': 'res/check',
-                'pack_token': pack_token,
-            })
-            self.assertEqual(res.text, 'S')
+                res = admin_session.post('http://localhost:5501/manage/pro/updatetests?proid=1', data={
+                    'reqtype': 'addsingletestcase',
+                    'pro_id': 6,
+                    'testcase': '1',
+                    'group': group_idx,
+                })
+                self.assertEqual(res.text, 'S')
 
             def callback():
                 chal_id = self.submit_problem(6, 'print(50)', 'python3', admin_session)
