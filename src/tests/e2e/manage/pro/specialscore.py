@@ -17,7 +17,7 @@ class ManageProSpecialScoreTest(AsyncTest):
 
     async def setup_basic_special_score_problem(self, expected_pro_id: int, checker_path: str):
         with AccountContext("admin@test", "testtest") as admin_session:
-            res = admin_session.post('http://localhost:5501/manage/pro/add', data={
+            res = admin_session.post('manage/pro/add', data={
                 'reqtype': 'addpro',
                 'name': 'special score test',
                 'status': ProConst.STATUS_ONLINE,
@@ -25,7 +25,7 @@ class ManageProSpecialScoreTest(AsyncTest):
             })
             self.assertEqual(res.text, str(expected_pro_id))
 
-            res = admin_session.post('http://localhost:5501/manage/pro/update', data={
+            res = admin_session.post('manage/pro/update', data={
                 'reqtype': 'updatepro',
                 'pro_id': expected_pro_id,
                 'name': 'special score test',
@@ -38,7 +38,7 @@ class ManageProSpecialScoreTest(AsyncTest):
             })
             self.assertEqual(res.text, 'S')
 
-            res = admin_session.post('http://localhost:5501/manage/pro/update', data={
+            res = admin_session.post('manage/pro/update', data={
                 'reqtype': 'updatelimit',
                 'pro_id': expected_pro_id,
                 'limits': json.dumps({
@@ -53,7 +53,7 @@ class ManageProSpecialScoreTest(AsyncTest):
             # NOTE: In this case, the testcase is not important, but we need at least one testcase because without any test cases, the judge cannot function.
             inputfile_token = await self._upload_file('tests/static_file/toj3/3.in', admin_session)
             outputfile_token = await self._upload_file('tests/static_file/toj3/3.out', admin_session)
-            res = admin_session.post('http://localhost:5501/manage/pro/updatetests', data={
+            res = admin_session.post('manage/pro/updatetests', data={
                 'reqtype': 'addsinglefile',
                 'pro_id': expected_pro_id,
                 'filename': '1',
@@ -64,7 +64,7 @@ class ManageProSpecialScoreTest(AsyncTest):
 
             # NOTE: add checker
             pack_token = await self._upload_file(f'{checker_path}/res/check/check.cpp', admin_session)
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager', data={
+            res = admin_session.post('manage/pro/filemanager', data={
                 'reqtype': 'addsinglefile',
                 'pro_id': expected_pro_id,
                 'filename': 'check.cpp',
@@ -73,7 +73,7 @@ class ManageProSpecialScoreTest(AsyncTest):
             })
             self.assertEqual(res.text, 'S')
             pack_token = await self._upload_file(f'{checker_path}/res/check/build', admin_session)
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager', data={
+            res = admin_session.post('manage/pro/filemanager', data={
                 'reqtype': 'addsinglefile',
                 'pro_id': expected_pro_id,
                 'filename': 'build',
@@ -86,14 +86,14 @@ class ManageProSpecialScoreTest(AsyncTest):
         with AccountContext("admin@test", "testtest") as admin_session:
             await self.setup_basic_special_score_problem(5, 'tests/static_file/special_score')
 
-            res = admin_session.post('http://localhost:5501/manage/pro/updatetests', data={
+            res = admin_session.post('manage/pro/updatetests', data={
                 'reqtype': 'addtaskgroup',
                 'pro_id': 5,
                 'weight': 100, # NOTE: weight is not important, because we will be overwritten by the checker
             })
             self.assertEqual(res.text, 'S')
 
-            res = admin_session.post('http://localhost:5501/manage/pro/updatetests?proid=1', data={
+            res = admin_session.post('manage/pro/updatetests?proid=1', data={
                 'reqtype': 'addsingletestcase',
                 'pro_id': 5,
                 'testcase': '1',
@@ -111,17 +111,17 @@ class ManageProSpecialScoreTest(AsyncTest):
             await self.wait_for_judge_finish(callback)
             chal_states = self.get_chal_state(13, admin_session)
             self.assertEqual([ChalConst.STATE_PC], chal_states)
-            html = self.get_html('http://localhost:5501/chal/13', admin_session)
+            html = self.get_html('chal/13', admin_session)
             states_table = html.select('tr.states')
             self.assertEqual(states_table[0].select_one('td.score').text, '32.27')
 
             chal_states = self.get_chal_state(14, admin_session)
             self.assertEqual([ChalConst.STATE_AC], chal_states)
-            html = self.get_html('http://localhost:5501/chal/14', admin_session)
+            html = self.get_html('chal/14', admin_session)
             states_table = html.select('tr.states')
             self.assertEqual(states_table[0].select_one('td.score').text, '132.27')
 
-            html = self.get_html('http://localhost:5501/chal', admin_session)
+            html = self.get_html('chal', admin_session)
             trs = html.select('table#challist > tbody > tr')[1:]
             self.assertEqual(trs[0].select_one('td#score').text, '132.27')
             self.assertEqual(trs[1].select_one('td#score').text, '32.27')
@@ -136,14 +136,14 @@ class ManageProSpecialScoreTest(AsyncTest):
 
             group_weights = [50, 25, 25]
             for group_idx, weight in enumerate(group_weights):
-                res = admin_session.post('http://localhost:5501/manage/pro/updatetests', data={
+                res = admin_session.post('manage/pro/updatetests', data={
                     'reqtype': 'addtaskgroup',
                     'pro_id': 6,
                     'weight': weight,
                 })
                 self.assertEqual(res.text, 'S')
 
-                res = admin_session.post('http://localhost:5501/manage/pro/updatetests?proid=1', data={
+                res = admin_session.post('manage/pro/updatetests?proid=1', data={
                     'reqtype': 'addsingletestcase',
                     'pro_id': 6,
                     'testcase': '1',
@@ -161,7 +161,7 @@ class ManageProSpecialScoreTest(AsyncTest):
             await self.wait_for_judge_finish(callback)
             chal_states = self.get_chal_state(15, admin_session)
             self.assertEqual([ChalConst.STATE_PC] * len(chal_states), chal_states)
-            html = self.get_html('http://localhost:5501/chal/15', admin_session)
+            html = self.get_html('chal/15', admin_session)
             states_table = html.select('tr.states')
             self.assertEqual(states_table[0].select_one('td.score').text, '25.00')
             self.assertEqual(states_table[1].select_one('td.score').text, '12.50')
@@ -169,13 +169,13 @@ class ManageProSpecialScoreTest(AsyncTest):
 
             chal_states = self.get_chal_state(16, admin_session)
             self.assertEqual([ChalConst.STATE_AC] * len(chal_states), chal_states)
-            html = self.get_html('http://localhost:5501/chal/16', admin_session)
+            html = self.get_html('chal/16', admin_session)
             states_table = html.select('tr.states')
             self.assertEqual(states_table[0].select_one('td.score').text, '50.00')
             self.assertEqual(states_table[1].select_one('td.score').text, '25.00')
             self.assertEqual(states_table[2].select_one('td.score').text, '25.00')
 
-            html = self.get_html('http://localhost:5501/chal', admin_session)
+            html = self.get_html('chal', admin_session)
             trs = html.select('table#challist > tbody > tr')[1:]
             self.assertEqual(trs[0].select_one('td#score').text, '100.00')
             self.assertEqual(trs[1].select_one('td#score').text, '50.00')

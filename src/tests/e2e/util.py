@@ -28,15 +28,19 @@ class AsyncTest(unittest.IsolatedAsyncioTestCase):
     def __del__(self):
         pass
 
-    def get_html(self, url, session):
-        res = session.get(url)
+    def get_html(self, url, session, full_url=None):
+        if full_url is not None:
+            res = session.get(full_url=full_url)
+        else:
+            res = session.get(url)
+
         return BeautifulSoup(res.text, 'html.parser')
 
     def get_isoformat(self, time: datetime.datetime) -> str:
         return time.isoformat(timespec='milliseconds') + 'Z'
 
     def get_chal_state(self, chal_id: int, session):
-        html = self.get_html(f'http://localhost:5501/chal/{chal_id}', session)
+        html = self.get_html(f'chal/{chal_id}', session)
         all_states = []
         for tr in html.select('tr.states'):
             td = tr.select_one('td.state')
@@ -85,7 +89,7 @@ class AsyncTest(unittest.IsolatedAsyncioTestCase):
         with open(file_path, 'rb') as f:
             await self.upload_file(f, file_size, pack_token)
 
-        res = session.post('http://localhost:5501/manage/pro/add', data={
+        res = session.post('manage/pro/add', data={
             'reqtype': 'addpro',
             'name': name,
             'status': status,
@@ -95,11 +99,11 @@ class AsyncTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(res.text, str(expected_pro_id))
 
-        html = self.get_html('http://localhost:5501/manage/pro', session)
+        html = self.get_html('manage/pro', session)
         self.assertIsNotNone(html.select_one(f'td[proid="{expected_pro_id}"]'))
 
     def get_upload_token(self, session):
-        res = session.post('http://localhost:5501/manage/pack', data={
+        res = session.post('manage/pack', data={
             'reqtype': 'gettoken'
         })
         pack_token = json.loads(res.text)
@@ -107,7 +111,7 @@ class AsyncTest(unittest.IsolatedAsyncioTestCase):
         return pack_token
 
     def submit_problem(self, pro_id: int, code: str, comp_type: str, session) -> int:
-        res = session.post('http://localhost:5501/submit', data={
+        res = session.post('submit', data={
             'reqtype': 'submit',
             'pro_id': pro_id,
             'code': code,
@@ -157,15 +161,22 @@ class AsyncTest(unittest.IsolatedAsyncioTestCase):
             if not len(judges_cnt):
                 break
 
+class BaseUrlSession(requests.Session):
+    def request(self, method: str | bytes, url: str | bytes, *args, **kwargs):
+        if 'full_url' in kwargs:
+            url = kwargs.pop('full_url')
+        else:
+            url = f"http://localhost:5501/{url}"
+        return super().request(method, url, *args, **kwargs)
 
 class AccountContext:
     def __init__(self, mail: str, pw: str):
         self.mail = mail
         self.pw = pw
-        self.session = requests.Session()
+        self.session = BaseUrlSession()
 
     def __enter__(self):
-        res = self.session.post('http://localhost:5501/sign', data={
+        res = self.session.post('sign', data={
             'reqtype': 'signin',
             'mail': self.mail,
             'pw': self.pw,
@@ -178,7 +189,7 @@ class AccountContext:
         return self.session
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        res = self.session.post('http://localhost:5501/sign', data={
+        res = self.session.post('sign', data={
             'reqtype': 'signout',
         })
         assert res.text == 'S'

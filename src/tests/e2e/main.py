@@ -51,7 +51,7 @@ class E2ETest(AsyncTest):
         except:
             pass
     def login(self, mail: str, pw: str):
-        res = self.session.post('http://localhost:5501/sign', data={
+        res = self.session.post('sign', data={
             'reqtype': 'signin',
             'mail': mail,
             'pw': pw,
@@ -63,7 +63,7 @@ class E2ETest(AsyncTest):
         self.assertIn('id', self.session.cookies.get_dict())
 
     def logout(self):
-        res = self.session.post('http://localhost:5501/sign', data={
+        res = self.session.post('sign', data={
             'reqtype': 'signout',
         })
         self.assertEqual(res.text, 'S')
@@ -115,17 +115,17 @@ class E2ETest(AsyncTest):
             await self.init()
 
             with AccountContext('admin@test', 'testtest') as admin_session:
-                html = self.get_html('http://localhost:5501/index/', admin_session)
+                html = self.get_html('index/', admin_session)
                 self.assertIsNotNone(html.select_one('li.manage'))
                 self.assertEqual(html.select_one('script#indexjs').attrs.get('acct_id'), '1')
 
-                html = self.get_html('http://localhost:5501/manage/judge', admin_session)
+                html = self.get_html('manage/judge', admin_session)
                 self.assertEqual(html.select('tr')[1].select('td')[2].text, 'Online', 'Test need judge connected')
 
                 await self.upload_problem('toj3.tar.xz', 'GCD', ProConst.STATUS_ONLINE, expected_pro_id=1, session=admin_session)
 
                 # view proset
-                html = self.get_html('http://localhost:5501/proset', admin_session)
+                html = self.get_html('proset', admin_session)
                 trs = html.select('#prolist > tbody > tr')
                 self.assertEqual(trs[0].select('td')[0].text, '1')  # pro_id
                 self.assertEqual(trs[0].select('td')[1].text, 'Todo')  # pro status
@@ -137,14 +137,14 @@ class E2ETest(AsyncTest):
                 self.assertEqual(trs[0].select('td')[5].text, '')  # pro tags
 
                 # view problem
-                html = self.get_html('http://localhost:5501/pro/1', admin_session)
+                html = self.get_html('pro/1', admin_session)
                 self.assertIsNotNone(html.select_one('h3'))
                 self.assertIsNotNone(html.select_one('a.btn.btn-warning'))
 
-                res = admin_session.get('http://localhost:5501/pro/1/cont.html')
+                res = admin_session.get('pro/1/cont.html')
                 self.assertIn('X-Accel-Redirect', res.headers)
 
-                res = admin_session.get('http://localhost:5501/submit/1')
+                res = admin_session.get('submit/1')
                 self.assertNotEqual(res.text, '<h1 style="color: red;">All Judge Server Offline</h1>')
 
                 # submit problem
@@ -162,7 +162,7 @@ class E2ETest(AsyncTest):
                 self.assertEqual(chal_states_result, [ChalConst.STATE_AC] * len(chal_states_result))
 
                 # query code
-                res = admin_session.post('http://localhost:5501/code', {
+                res = admin_session.post('code', {
                     'chal_id': 1
                 })
                 self.assertNotEqual(res.text, 'Eacces')
@@ -172,7 +172,7 @@ class E2ETest(AsyncTest):
                                  tornado.escape.xhtml_escape(open('tests/static_file/code/toj3.ac.py').read().strip()))
 
                 # view challist
-                html = self.get_html('http://localhost:5501/chal', admin_session)
+                html = self.get_html('chal', admin_session)
 
                 all_states = []
                 all_expected_states = [ChalConst.STATE_AC]
@@ -188,7 +188,7 @@ class E2ETest(AsyncTest):
                 self.assertEqual(all_states, all_expected_states)
 
                 # view proset
-                html = self.get_html('http://localhost:5501/proset', admin_session)
+                html = self.get_html('proset', admin_session)
                 trs = html.select('#prolist > tbody > tr')
                 self.assertEqual(trs[0].select('td')[0].text, '1')  # pro_id
                 self.assertEqual(trs[0].select('td')[1].text,
@@ -212,12 +212,12 @@ class E2ETest(AsyncTest):
             # login normal
             with AccountContext('test1@test', 'test') as user_session:
                 # check index & is_manage
-                html = self.get_html('http://localhost:5501/index/', user_session)
+                html = self.get_html('index/', user_session)
                 self.assertIsNone(html.select_one('li.manage'))
                 self.assertEqual(html.select_one('script#indexjs').attrs.get('acct_id'), '2')
 
                 # check manage permission
-                res = user_session.get('http://localhost:5501/manage/dash')
+                res = user_session.get('manage/dash')
                 self.assertEqual(res.text, 'Eacces')
 
             # pro test, tags

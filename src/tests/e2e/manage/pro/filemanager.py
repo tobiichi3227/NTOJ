@@ -29,13 +29,13 @@ class ManageProFileManagerTest(AsyncTest):
             for key, val in table.items():
                 d[key] = val
 
-            res = session.post('http://localhost:5501/manage/pro/filemanager', data=d)
+            res = session.post('manage/pro/filemanager', data=d)
             self.assertEqual(res.text, equal_value)
 
     async def main(self):
         with AccountContext("admin@test", "testtest") as admin_session:
             # NOTE: preview
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager?proid=1', data={
+            res = admin_session.post('manage/pro/filemanager?proid=1', data={
                 'reqtype': 'preview',
                 'pro_id': 1,
                 'filename': 'cont.html',
@@ -62,7 +62,7 @@ class ManageProFileManagerTest(AsyncTest):
 
             # NOTE: addsinglefile
             pack_token = await self._upload_file('tests/static_file/toj3/3.in', admin_session)
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager?proid=1', data={
+            res = admin_session.post('manage/pro/filemanager?proid=1', data={
                 'reqtype': 'addsinglefile',
                 'pro_id': 1,
                 'filename': 'test',
@@ -104,7 +104,7 @@ class ManageProFileManagerTest(AsyncTest):
 
             # NOTE: updatesinglefile
             pack_token = await self._upload_file('tests/static_file/float_checker/pass_all_checker.cpp', admin_session)
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager?proid=4', data={
+            res = admin_session.post('manage/pro/filemanager?proid=4', data={
                 'reqtype': 'updatesinglefile',
                 'pro_id': 4,
                 'filename': 'check.cpp',
@@ -114,7 +114,7 @@ class ManageProFileManagerTest(AsyncTest):
             self.assertEqual(res.text, 'S')
             self.assertEqual(open('tests/static_file/float_checker/pass_all_checker.cpp').read(), open('problem/4/res/check/check.cpp').read())
             def callback():
-                res = admin_session.post('http://localhost:5501/submit', data={
+                res = admin_session.post('submit', data={
                     'reqtype': 'rechal',
                     'chal_id': 12
                 })
@@ -141,7 +141,7 @@ class ManageProFileManagerTest(AsyncTest):
             )
 
             # NOTE: renamesinglefile
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager?proid=4', data={
+            res = admin_session.post('manage/pro/filemanager?proid=4', data={
                 'reqtype': 'renamesinglefile',
                 'pro_id': 4,
                 'old_filename': 'check.cpp',
@@ -149,7 +149,7 @@ class ManageProFileManagerTest(AsyncTest):
                 'path': 'res/check'
             })
             self.assertEqual(res.text, 'S')
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager?proid=2', data={
+            res = admin_session.post('manage/pro/filemanager?proid=2', data={
                 'reqtype': 'renamesinglefile',
                 'pro_id': 2,
                 'old_filename': 'stub.cpp',
@@ -161,7 +161,7 @@ class ManageProFileManagerTest(AsyncTest):
             self.assertTrue(os.path.exists('problem/4/res/check/check.cpp.cpp'))
 
             def callback():
-                res = admin_session.post('http://localhost:5501/submit', data={
+                res = admin_session.post('submit', data={
                     'reqtype': 'rechal',
                     'chal_id': 9
                 })
@@ -171,7 +171,7 @@ class ManageProFileManagerTest(AsyncTest):
             self.assertEqual(chal_states_result, [ChalConst.STATE_CE])
 
             def callback():
-                res = admin_session.post('http://localhost:5501/submit', data={
+                res = admin_session.post('submit', data={
                     'reqtype': 'rechal',
                     'chal_id': 12
                 })
@@ -199,7 +199,7 @@ class ManageProFileManagerTest(AsyncTest):
             )
 
             # NOTE: deletesinglefile
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager?proid=4', data={
+            res = admin_session.post('manage/pro/filemanager?proid=4', data={
                 'reqtype': 'deletesinglefile',
                 'pro_id': 4,
                 'filename': 'check.cpp.cpp',
@@ -207,7 +207,7 @@ class ManageProFileManagerTest(AsyncTest):
             })
             self.assertEqual(res.text, 'S')
             self.assertFalse(os.path.exists('problem/4/res/check/check.cpp.cpp'))
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager?proid=2', data={
+            res = admin_session.post('manage/pro/filemanager?proid=2', data={
                 'reqtype': 'deletesinglefile',
                 'pro_id': 2,
                 'filename': 'stub.cpp.cpp',
@@ -233,15 +233,15 @@ class ManageProFileManagerTest(AsyncTest):
             )
 
             # TODO: 檢查 pro_id=1只有http, pro_id=2有http與make，pro_id=4有http與check
-            html = self.get_html('http://localhost:5501/manage/pro/filemanager?proid=1', admin_session)
+            html = self.get_html('manage/pro/filemanager?proid=1', admin_session)
             dirs = html.select_one('div#dirs').select('div.accordion-item')
             self.assertEqual(len(dirs), 1) # http
 
-            html = self.get_html('http://localhost:5501/manage/pro/filemanager?proid=2', admin_session)
+            html = self.get_html('manage/pro/filemanager?proid=2', admin_session)
             dirs = html.select_one('div#dirs').select('div.accordion-item')
             self.assertEqual(len(dirs), 2) # http, res/make
 
-            html = self.get_html('http://localhost:5501/manage/pro/filemanager?proid=4', admin_session)
+            html = self.get_html('manage/pro/filemanager?proid=4', admin_session)
 
             dirs = html.select_one('div#dirs').select('div.accordion-item')
             self.assertEqual(len(dirs), 2) # http, res/check
@@ -249,7 +249,7 @@ class ManageProFileManagerTest(AsyncTest):
             # TODO: 做一次完整的 manual add problem
 
             pack_token = await self._upload_file('tests/static_file/toj659/res/make/stub.cpp', admin_session)
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager?proid=2', data={
+            res = admin_session.post('manage/pro/filemanager?proid=2', data={
                 'reqtype': 'addsinglefile',
                 'pro_id': 2,
                 'filename': 'stub.cpp',
@@ -259,7 +259,7 @@ class ManageProFileManagerTest(AsyncTest):
             self.assertEqual(res.text, 'S')
 
             pack_token = await self._upload_file('tests/static_file/float_checker/res/check/check.cpp', admin_session)
-            res = admin_session.post('http://localhost:5501/manage/pro/filemanager?proid=4', data={
+            res = admin_session.post('manage/pro/filemanager?proid=4', data={
                 'reqtype': 'addsinglefile',
                 'pro_id': 4,
                 'filename': 'check.cpp',

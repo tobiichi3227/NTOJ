@@ -11,7 +11,7 @@ class ChalTest(AsyncTest):
     async def main(self):
         with AccountContext('test1@test', 'test') as user_session:
             # check code permission
-            res = user_session.post('http://localhost:5501/code', data={
+            res = user_session.post('code', data={
                 'chal_id': 1
             })
             self.assertEqual(res.text, 'Eacces')
@@ -19,7 +19,7 @@ class ChalTest(AsyncTest):
         with AccountContext('admin@test', 'testtest') as admin_session:
             # NOTE: If STATE_ERR(IE), judge request will not send
             shutil.move('code/1/main.py', 'code/1/main.cpp')
-            res = admin_session.post('http://localhost:5501/code', data={
+            res = admin_session.post('code', data={
                 'chal_id': 1
             })
             self.assertNotEqual(res.text, 'Eacces')
@@ -27,7 +27,7 @@ class ChalTest(AsyncTest):
             self.assertEqual(res['comp_type'], 'python')
             self.assertEqual(res['code'].strip(), 'EROOR: The code is lost on server.')
 
-            res = admin_session.post('http://localhost:5501/submit', data={
+            res = admin_session.post('submit', data={
                 'reqtype': 'rechal',
                 'chal_id': 1
             })
@@ -40,7 +40,7 @@ class ChalTest(AsyncTest):
             await ws.write_message(str(1))
 
             def callback():
-                res = admin_session.post('http://localhost:5501/submit', data={
+                res = admin_session.post('submit', data={
                     'reqtype': 'rechal',
                     'chal_id': 1
                 })
@@ -152,7 +152,7 @@ class ChalListTest(AsyncTest):
             chal_states_result = self.get_chal_state(chal_id=9, session=admin_session)
             self.assertEqual(chal_states_result, [ChalConst.STATE_AC] * len(chal_states_result))
 
-            html = self.get_html('http://localhost:5501/chal', admin_session)
+            html = self.get_html('chal', admin_session)
 
             all_states = []
             all_expected_states = [
@@ -170,15 +170,15 @@ class ChalListTest(AsyncTest):
             self.assertEqual(len(all_states), len(all_expected_states))
             self.assertEqual(all_states, all_expected_states)
 
-            html = self.get_html('http://localhost:5501/chal?proid=2', admin_session)
+            html = self.get_html('chal?proid=2', admin_session)
             self.assertEqual(len(html.select('tr')), 2 + 1)
 
-            html = self.get_html('http://localhost:5501/chal?acctid=123', admin_session)
+            html = self.get_html('chal?acctid=123', admin_session)
             self.assertEqual(len(html.select('tr')), 2)
 
-            html = self.get_html('http://localhost:5501/chal?compiler_type=python3', admin_session)
+            html = self.get_html('chal?compiler_type=python3', admin_session)
             self.assertEqual(len(html.select('tr')), 2 + 4)
 
-            html = self.get_html(f'http://localhost:5501/chal?compiler_type=python3&state={ChalConst.STATE_AC}',
+            html = self.get_html(f'chal?compiler_type=python3&state={ChalConst.STATE_AC}',
                                  admin_session)
             self.assertEqual(len(html.select('tr')), 2 + 2)

@@ -25,7 +25,7 @@ class ContestTest(AsyncTest):
             for i in range(7, 12 + 1):
                 await self.upload_problem('toj674.tar.xz', f'Move {i - 6}', ProConst.STATUS_CONTEST, expected_pro_id=i, session=admin_session)
 
-            res = admin_session.post('http://localhost:5501/contests/manage/add', data={
+            res = admin_session.post('contests/manage/add', data={
                 'reqtype': 'add',
                 'name': 'contest 1'
             })
@@ -55,38 +55,38 @@ class ContestTest(AsyncTest):
                 'submission_cd_time': 60,
                 'freeze_scoreboard_period': 0
             }
-            res = admin_session.post('http://localhost:5501/contests/1/manage/general', data=default_config)
+            res = admin_session.post('contests/1/manage/general', data=default_config)
             self.assertEqual(res.text, 'S')
 
             # test desc
-            res = admin_session.post('http://localhost:5501/contests/1/manage/desc', data={
+            res = admin_session.post('contests/1/manage/desc', data={
                 'reqtype': 'update',
                 'desc_type': 'before',
                 'desc': 'desc before contest',
             })
             self.assertEqual(res.text, 'S')
-            res = admin_session.post('http://localhost:5501/contests/1/manage/desc', data={
+            res = admin_session.post('contests/1/manage/desc', data={
                 'reqtype': 'update',
                 'desc_type': 'during',
                 'desc': 'desc during contest',
             })
             self.assertEqual(res.text, 'S')
-            res = admin_session.post('http://localhost:5501/contests/1/manage/desc', data={
+            res = admin_session.post('contests/1/manage/desc', data={
                 'reqtype': 'update',
                 'desc_type': 'after',
                 'desc': 'desc after contest',
             })
             self.assertEqual(res.text, 'S')
 
-            res = admin_session.get('http://localhost:5501/contests/1/manage/desc')
+            res = admin_session.get('contests/1/manage/desc')
             self.assertEqual(re.findall(r'let desc_before_contest = `(.*)`', res.text, re.I)[0], 'desc before contest')
             self.assertEqual(re.findall(r'let desc_during_contest = `(.*)`', res.text, re.I)[0], 'desc during contest')
             self.assertEqual(re.findall(r'let desc_after_contest = `(.*)`', res.text, re.I)[0], 'desc after contest')
 
-            res = admin_session.get('http://localhost:5501/contests/1')
+            res = admin_session.get('contests/1')
             self.assertEqual(re.findall(r'let desc_tex = `(.*)`', res.text, re.I)[0], 'desc before contest')
 
-            html = self.get_html('http://localhost:5501/contests/1/info', admin_session)
+            html = self.get_html('contests/1/info', admin_session)
             during_section = html.select('.card-body')[0]
             contest_style_section = html.select('.card-body')[1]
             registration_info = html.select('.card-body')[2]
@@ -100,7 +100,7 @@ class ContestTest(AsyncTest):
             self.assertEqual(registration_info.select('h5')[1].text, 'Invited')
             self.assertEqual(registration_status.select('h5')[0].text, 'Admin, no registration needed')
 
-            html = self.get_html('http://localhost:5501/contests', admin_session)
+            html = self.get_html('contests', admin_session)
             self.assertEqual(len(html.select('tr')[1:]), 1)
             contest0 = html.select('tr')[1]
             self.assertEqual(contest0.select_one('th').text, 'contest 1')
@@ -111,54 +111,54 @@ class ContestTest(AsyncTest):
             self.assertEqual(contest0.select('td')[4].text, 'Yes')
 
             # add problem
-            res = admin_session.post('http://localhost:5501/contests/1/manage/pro', data={
+            res = admin_session.post('contests/1/manage/pro', data={
                 'reqtype': 'add',
                 'pro_id': 7
             })
             self.assertEqual(res.text, 'S')
 
-            html = self.get_html('http://localhost:5501/contests/1/manage/pro', admin_session)
+            html = self.get_html('contests/1/manage/pro', admin_session)
             self.assertEqual(len(html.select('tr')[1:]), 1)
 
-            res = admin_session.post('http://localhost:5501/contests/1/manage/pro', data={
+            res = admin_session.post('contests/1/manage/pro', data={
                 'reqtype': 'remove',
                 'pro_id': 7
             })
             self.assertEqual(res.text, 'S')
-            html = self.get_html('http://localhost:5501/contests/1/manage/pro', admin_session)
+            html = self.get_html('contests/1/manage/pro', admin_session)
             self.assertEqual(len(html.select('tr')[1:]), 0)
 
-            res = admin_session.post('http://localhost:5501/contests/1/manage/pro', data={
+            res = admin_session.post('contests/1/manage/pro', data={
                 'reqtype': 'multi_add',
                 'pro_id': '7..13'
             })
             self.assertEqual(res.text, 'S')
-            html = self.get_html('http://localhost:5501/contests/1/manage/pro', admin_session)
+            html = self.get_html('contests/1/manage/pro', admin_session)
             self.assertEqual(len(html.select('tr')[1:]), 6)
 
-            res = admin_session.post('http://localhost:5501/contests/1/manage/pro', data={
+            res = admin_session.post('contests/1/manage/pro', data={
                 'reqtype': 'multi_remove',
                 'pro_id': '7..13'
             })
             self.assertEqual(res.text, 'S')
-            html = self.get_html('http://localhost:5501/contests/1/manage/pro', admin_session)
+            html = self.get_html('contests/1/manage/pro', admin_session)
             self.assertEqual(len(html.select('tr')[1:]), 0)
 
-            res = admin_session.post('http://localhost:5501/contests/1/manage/pro', data={
+            res = admin_session.post('contests/1/manage/pro', data={
                 'reqtype': 'multi_add',
                 'pro_id': '7..13'
             })
             self.assertEqual(res.text, 'S')
-            html = self.get_html('http://localhost:5501/contests/1/manage/pro', admin_session)
+            html = self.get_html('contests/1/manage/pro', admin_session)
             self.assertEqual(len(html.select('tr')[1:]), 6)
 
-            html = self.get_html('http://localhost:5501/contests/1/proset', admin_session)
+            html = self.get_html('contests/1/proset', admin_session)
             self.assertEqual(len(html.select('tr')[1:]), 6)
 
             # test reg
             # current reg mode is invite
         with AccountContext('contest1@test', 'test') as user_session:
-            html = self.get_html('http://localhost:5501/contests/1/reg', user_session)
+            html = self.get_html('contests/1/reg', user_session)
             self.assertEqual(html.select_one('h2').text, 'contest 1')
             self.assertEqual(html.select('label')[0].text, 'Status: Not Invited')
             self.assertEqual(html.select('label')[1].text, f"Registration End: {reg_end.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -166,7 +166,7 @@ class ContestTest(AsyncTest):
             self.assertIsNone(html.select_one('button'))  # NOTE: registration button
 
         with AccountContext('admin@test', 'testtest') as admin_session:
-            res = admin_session.post('http://localhost:5501/contests/1/manage/acct', data={
+            res = admin_session.post('contests/1/manage/acct', data={
                 'reqtype': 'add',
                 'acct_id': 4,
                 'type': 'normal',
@@ -174,17 +174,17 @@ class ContestTest(AsyncTest):
             self.assertEqual(res.text, 'S')
 
         with AccountContext('contest1@test', 'test') as user_session:
-            html = self.get_html('http://localhost:5501/contests/1/reg', user_session)
+            html = self.get_html('contests/1/reg', user_session)
             self.assertEqual(html.select('label')[0].text, 'Status: Invited')
             self.assertIsNone(html.select_one('button'))  # NOTE: registration button
 
-            html = self.get_html('http://localhost:5501/contests/1/info', user_session)
+            html = self.get_html('contests/1/info', user_session)
             registration_status = html.select('.card-body')[3]
             self.assertEqual(registration_status.select('h5')[0].text, 'Invited')
             # self.assertIsNone(registration_status.select_one('a')) # TODO: Follow Spec
 
         with AccountContext('admin@test', 'testtest') as admin_session:
-            res = admin_session.post('http://localhost:5501/contests/1/manage/acct', data={
+            res = admin_session.post('contests/1/manage/acct', data={
                 'reqtype': 'remove',
                 'acct_id': 4,
                 'type': 'normal',
@@ -192,47 +192,47 @@ class ContestTest(AsyncTest):
             self.assertEqual(res.text, 'S')
 
         with AccountContext('contest1@test', 'test') as user_session:
-            html = self.get_html('http://localhost:5501/contests/1/reg', user_session)
+            html = self.get_html('contests/1/reg', user_session)
             self.assertEqual(html.select('label')[0].text, 'Status: Not Invited')
 
         with AccountContext('admin@test', 'testtest') as admin_session:
             config = copy.deepcopy(default_config)
             config['reg_mode'] = RegMode.FREE_REG.value
-            res = admin_session.post('http://localhost:5501/contests/1/manage/general', data=config)
+            res = admin_session.post('contests/1/manage/general', data=config)
             self.assertEqual(res.text, 'S')
 
         with AccountContext('contest1@test', 'test') as user_session:
-            html = self.get_html('http://localhost:5501/contests/1/reg', user_session)
+            html = self.get_html('contests/1/reg', user_session)
             self.assertEqual(html.select('label')[0].text, 'Status: Not Registered')
             self.assertIsNotNone(html.select_one('button'))  # NOTE: registration button
 
-            html = self.get_html('http://localhost:5501/contests/1/info', user_session)
+            html = self.get_html('contests/1/info', user_session)
             registration_status = html.select('.card-body')[3]
             self.assertEqual(registration_status.select('h5')[0].text, 'Not Registered')
             self.assertIsNotNone(registration_status.select_one('a'))
 
-            res = user_session.post('http://localhost:5501/contests/1/reg', data={
+            res = user_session.post('contests/1/reg', data={
                 'reqtype': 'reg'
             })
             self.assertEqual(res.text, 'S')
 
-            html = self.get_html('http://localhost:5501/contests/1/reg', user_session)
+            html = self.get_html('contests/1/reg', user_session)
             self.assertEqual(html.select('label')[0].text, 'Status: Registered')
             self.assertEqual(html.select_one('button').text, 'Unregister')
 
-            html = self.get_html('http://localhost:5501/contests/1/info', user_session)
+            html = self.get_html('contests/1/info', user_session)
             registration_status = html.select('.card-body')[3]
             self.assertEqual(registration_status.select('h5')[0].text, 'Registered')
             self.assertIsNotNone(registration_status.select_one('a'))
 
         with AccountContext('admin@test', 'testtest') as admin_session:
-            html = self.get_html('http://localhost:5501/contests/1/manage/acct', admin_session)
+            html = self.get_html('contests/1/manage/acct', admin_session)
             normal_accts = html.select('div#collapseOne > div > table > tbody > tr')
             self.assertEqual(len(normal_accts), 1)
             self.assertEqual(normal_accts[0].select_one('th').text, '4')
             self.assertEqual(normal_accts[0].select('td')[0].text, 'contest1')
 
-            res = admin_session.post('http://localhost:5501/contests/1/manage/acct', data={
+            res = admin_session.post('contests/1/manage/acct', data={
                 'reqtype': 'remove',
                 'acct_id': 4,
                 'type': 'normal',
@@ -241,99 +241,99 @@ class ContestTest(AsyncTest):
 
             config = copy.deepcopy(default_config)
             config['reg_mode'] = RegMode.REG_APPROVAL.value
-            res = admin_session.post('http://localhost:5501/contests/1/manage/general', data=config)
+            res = admin_session.post('contests/1/manage/general', data=config)
             self.assertEqual(res.text, 'S')
 
         with AccountContext('contest1@test', 'test') as user_session:
-            html = self.get_html('http://localhost:5501/contests/1/reg', user_session)
+            html = self.get_html('contests/1/reg', user_session)
             self.assertEqual(html.select('label')[0].text, 'Status: Not Registered')
             self.assertIsNotNone(html.select_one('button'))  # NOTE: registration button
 
-            res = user_session.post('http://localhost:5501/contests/1/reg', data={
+            res = user_session.post('contests/1/reg', data={
                 'reqtype': 'reg'
             })
             self.assertEqual(res.text, 'S')
 
-            html = self.get_html('http://localhost:5501/contests/1/reg', user_session)
+            html = self.get_html('contests/1/reg', user_session)
             self.assertEqual(html.select('label')[0].text, 'Status: Waiting Approval')
             self.assertEqual(html.select_one('button').text, 'Unregister')
 
-            html = self.get_html('http://localhost:5501/contests/1/info', user_session)
+            html = self.get_html('contests/1/info', user_session)
             registration_status = html.select('.card-body')[3]
             self.assertEqual(registration_status.select('h5')[0].text, 'Waiting Approval')
             self.assertIsNotNone(registration_status.select_one('a'))
 
         with AccountContext('admin@test', 'testtest') as admin_session:
-            html = self.get_html('http://localhost:5501/contests/1/manage/reg', admin_session)
+            html = self.get_html('contests/1/manage/reg', admin_session)
             trs = html.select('tr')[1:]
             self.assertEqual(len(trs), 1)
             self.assertEqual(trs[0].select_one('th').text, '4')
             self.assertEqual(trs[0].select('td')[0].text, 'contest1')
 
-            res = admin_session.post('http://localhost:5501/contests/1/manage/reg', data={
+            res = admin_session.post('contests/1/manage/reg', data={
                 'reqtype': 'approval',
                 'acct_id': 4,
             })
             self.assertEqual(res.text, 'S')
 
         with AccountContext('contest1@test', 'test') as user_session:
-            html = self.get_html('http://localhost:5501/contests/1/reg', user_session)
+            html = self.get_html('contests/1/reg', user_session)
             self.assertEqual(html.select('label')[0].text, 'Status: Registered')
             self.assertIsNotNone(html.select_one('button'))  # NOTE: registration button
 
-            html = self.get_html('http://localhost:5501/contests/1/reg', user_session)
+            html = self.get_html('contests/1/reg', user_session)
             self.assertEqual(html.select('label')[0].text, 'Status: Registered')
             self.assertEqual(html.select_one('button').text, 'Unregister')
 
-            html = self.get_html('http://localhost:5501/contests/1/info', user_session)
+            html = self.get_html('contests/1/info', user_session)
             registration_status = html.select('.card-body')[3]
             self.assertEqual(registration_status.select('h5')[0].text, 'Registered')
             self.assertIsNotNone(registration_status.select_one('a'))
 
-            res = user_session.post('http://localhost:5501/contests/1/reg', data={
+            res = user_session.post('contests/1/reg', data={
                 'reqtype': 'unreg'
             })
             self.assertEqual(res.text, 'S')
 
-            html = self.get_html('http://localhost:5501/contests/1/info', user_session)
+            html = self.get_html('contests/1/info', user_session)
             registration_status = html.select('.card-body')[3]
             self.assertEqual(registration_status.select('h5')[0].text, 'Not Registered')
             self.assertIsNotNone(registration_status.select_one('a'))
 
         with AccountContext('admin@test', 'testtest') as admin_session:
-            html = self.get_html('http://localhost:5501/contests/1/manage/reg', admin_session)
+            html = self.get_html('contests/1/manage/reg', admin_session)
             trs = html.select('tr')[1:]
             self.assertEqual(len(trs), 0)
 
         with AccountContext('contest1@test', 'test') as user_session:
-            res = user_session.post('http://localhost:5501/contests/1/reg', data={
+            res = user_session.post('contests/1/reg', data={
                 'reqtype': 'reg'
             })
             self.assertEqual(res.text, 'S')
 
         with AccountContext('admin@test', 'testtest') as admin_session:
-            html = self.get_html('http://localhost:5501/contests/1/manage/reg', admin_session)
+            html = self.get_html('contests/1/manage/reg', admin_session)
             trs = html.select('tr')[1:]
             self.assertEqual(len(trs), 1)
 
-            res = admin_session.post('http://localhost:5501/contests/1/manage/reg', data={
+            res = admin_session.post('contests/1/manage/reg', data={
                 'reqtype': 'reject',
                 'acct_id': 4,
             })
             self.assertEqual(res.text, 'S')
 
         with AccountContext('contest1@test', 'test') as user_session:
-            html = self.get_html('http://localhost:5501/contests/1/info', user_session)
+            html = self.get_html('contests/1/info', user_session)
             registration_status = html.select('.card-body')[3]
             self.assertEqual(registration_status.select('h5')[0].text, 'Not Registered')
             self.assertIsNotNone(registration_status.select_one('a'))
 
-            html = self.get_html('http://localhost:5501/contests/1/reg', user_session)
+            html = self.get_html('contests/1/reg', user_session)
             self.assertEqual(html.select('label')[0].text, 'Status: Not Registered')
             self.assertEqual(html.select_one('button').text, 'Register')
 
         with AccountContext('admin@test', 'testtest') as admin_session:
-            res = admin_session.post('http://localhost:5501/contests/1/manage/acct', data={
+            res = admin_session.post('contests/1/manage/acct', data={
                 'reqtype': 'multi_add',
                 'acct_id': '3,4,5,6,7,8,9',
                 'type': 'normal',
@@ -341,47 +341,47 @@ class ContestTest(AsyncTest):
             self.assertEqual(res.text, 'S')
 
         with AccountContext('contest1@test', 'test') as user_session:
-            html = self.get_html('http://localhost:5501/contests/1/proset', user_session)
+            html = self.get_html('contests/1/proset', user_session)
             self.assertEqual(len(html.select('tr')[1:]), 0)
 
-            res = user_session.get('http://localhost:5501/contests/1/pro/7')
+            res = user_session.get('contests/1/pro/7')
             self.assertEqual(res.text, 'Eacces')
 
-            res = user_session.get('http://localhost:5501/contests/1/pro/7/cont.pdf')
+            res = user_session.get('contests/1/pro/7/cont.pdf')
             self.assertEqual(res.text, 'Eacces')
 
         with AccountContext('admin@test', 'testtest') as admin_session:
             contest_start = now - datetime.timedelta(days=1)
             config = copy.deepcopy(default_config)
             config['contest_start'] = self.get_isoformat(contest_start)
-            res = admin_session.post('http://localhost:5501/contests/1/manage/general', data=config)
+            res = admin_session.post('contests/1/manage/general', data=config)
             self.assertEqual(res.text, 'S')
 
         with AccountContext('contest1@test', 'test') as user_session:
-            html = self.get_html('http://localhost:5501/contests', user_session)
+            html = self.get_html('contests', user_session)
             contest0 = html.select('tr')[1]
             self.assertEqual(contest0.select('td')[0].text, 'Started')
 
-            res = user_session.get('http://localhost:5501/contests/1')
+            res = user_session.get('contests/1')
             self.assertEqual(re.findall(r'let desc_tex = `(.*)`', res.text, re.I)[0], 'desc during contest')
 
-            html = self.get_html('http://localhost:5501/contests/1/proset', user_session)
+            html = self.get_html('contests/1/proset', user_session)
             self.assertEqual(len(html.select('tr')[1:]), 6)
             self.assertEqual(html.select('tr')[1:][0].select('td')[3].text.strip(), '0')
 
-            html = self.get_html('http://localhost:5501/contests/1/pro/7', user_session)
+            html = self.get_html('contests/1/pro/7', user_session)
             side = html.select_one('div#side')
             self.assertEqual(side.select('a')[0].attrs['href'], '/oj/contests/1/submit/7/')
             self.assertEqual(side.select('a')[1].attrs['href'], '/oj/contests/1/chal/?proid=7&acctid=4')
             self.assertEqual(side.select('a')[2].attrs['href'], '/oj/contests/1/chal/?proid=7')
 
-            res = user_session.get('http://localhost:5501/contests/1/pro/7/cont.pdf')
+            res = user_session.get('contests/1/pro/7/cont.pdf')
             self.assertIn('X-Accel-Redirect', res.headers)
 
-            html = self.get_html('http://localhost:5501/contests/1/submit/7', user_session)
+            html = self.get_html('contests/1/submit/7', user_session)
             self.assertEqual(len(html.select('option')), 2)
 
-            res = user_session.post('http://localhost:5501/contests/1/submit', data={
+            res = user_session.post('contests/1/submit', data={
                 'reqtype': 'submit',
                 'pro_id': 1,
                 'code': 'cc1',
@@ -389,7 +389,7 @@ class ContestTest(AsyncTest):
             })
             self.assertEqual(res.text, 'Enoext')
 
-            res = user_session.post('http://localhost:5501/contests/1/submit', data={
+            res = user_session.post('contests/1/submit', data={
                 'reqtype': 'submit',
                 'pro_id': 7,
                 'code': 'cc2',
@@ -397,7 +397,7 @@ class ContestTest(AsyncTest):
             })
             self.assertEqual(res.text, 'Ecomp')
 
-            res = user_session.post('http://localhost:5501/contests/1/submit', data={
+            res = user_session.post('contests/1/submit', data={
                 'reqtype': 'submit',
                 'pro_id': 7,
                 'code': open('tests/static_file/code/toj674.ac.cpp').read(),
@@ -416,7 +416,7 @@ class ContestTest(AsyncTest):
             ws2 = await websocket_connect('ws://localhost:5501/contests/1/scoreboardsub', on_message_callback=_message)
             await ws2.write_message('1')
 
-            res = user_session.post('http://localhost:5501/contests/1/submit', data={
+            res = user_session.post('contests/1/submit', data={
                 'reqtype': 'submit',
                 'pro_id': 7,
                 'code': open('tests/static_file/code/toj674.ac.cpp').read(),
@@ -424,7 +424,7 @@ class ContestTest(AsyncTest):
             })
             self.assertEqual(res.text, 'Esame')
 
-            res = user_session.post('http://localhost:5501/contests/1/submit', data={
+            res = user_session.post('contests/1/submit', data={
                 'reqtype': 'submit',
                 'pro_id': 7,
                 'code': 'cc3',
@@ -440,12 +440,12 @@ class ContestTest(AsyncTest):
                     ws.close()
                     break
 
-            html = self.get_html('http://localhost:5501/contests/1/proset', user_session)
+            html = self.get_html('contests/1/proset', user_session)
             self.assertEqual(len(html.select('tr')[1:]), 6)
             self.assertEqual(html.select('tr')[1:][0].select('td')[3].text.strip(), '100')
 
             # test scoreboard
-            res = user_session.post('http://localhost:5501/contests/1/scoreboard', data={})
+            res = user_session.post('contests/1/scoreboard', data={})
             scoreboard_data = json.loads(res.text)
             for scores in scoreboard_data:
                 if scores['acct_id'] == 4:
@@ -458,7 +458,7 @@ class ContestTest(AsyncTest):
             ws2.close()
 
             # test challist
-            html = self.get_html('http://localhost:5501/contests/1/chal', user_session)
+            html = self.get_html('contests/1/chal', user_session)
             self.assertEqual(len(html.select('tbody > tr')[1:]), 1)
             chal_tr = html.select('tbody > tr')[1:][0]
             self.assertEqual(chal_tr.attrs.get('id'), 'chal17')

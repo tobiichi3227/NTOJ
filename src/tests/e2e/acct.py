@@ -28,7 +28,7 @@ class SignTest(AsyncTest):
 class AcctPageTest(AsyncTest):
     async def main(self):
         with AccountContext('admin@test', 'testtest') as admin_session:
-            html = self.get_html('http://localhost:5501/acct/1', admin_session)
+            html = self.get_html('acct/1', admin_session)
             trs = html.select_one('form#profile').select('tr')
             self.assertEqual(html.select_one('div#summary > h1').text, 'admin')
             self.assertEqual(trs[0].select('td')[1].text, '200')
@@ -36,11 +36,11 @@ class AcctPageTest(AsyncTest):
             self.assertEqual(trs[2].select('td')[1].text.strip().replace('\n', ''), '33.3%(3/9)')
 
         with AccountContext('test1@test', 'test') as user_session:
-            html = self.get_html('http://localhost:5501/acctedit/2', user_session)
+            html = self.get_html('acctedit/2', user_session)
             self.assertIsNotNone(html.select_one('form#profile'))
             self.assertIsNotNone(html.select_one('form#reset'))
 
-            res = user_session.post('http://localhost:5501/acctedit', data={
+            res = user_session.post('acctedit', data={
                 'reqtype': 'profile',
                 'acct_id': 2,
                 'name': 'test1',
@@ -50,7 +50,7 @@ class AcctPageTest(AsyncTest):
             })
             self.assertEqual(res.text, 'S')
 
-            html = self.get_html('http://localhost:5501/acct/2', user_session)
+            html = self.get_html('acct/2', user_session)
             trs = html.select_one('form#profile').select('tr')
             self.assertEqual(html.select_one('div#summary > h1').text, 'test1')
             self.assertEqual(html.select_one('script#contjs').attrs.get('photo'),
@@ -64,7 +64,7 @@ class AcctPageTest(AsyncTest):
             self.assertEqual(trs[2].select('td')[1].text.strip().replace('\n', ''), '0.0%(0/1)')
 
             # test update profile permission
-            res = user_session.post('http://localhost:5501/acctedit', data={
+            res = user_session.post('acctedit', data={
                 'reqtype': 'profile',
                 'acct_id': 1,
                 'name': 'test1',
@@ -73,7 +73,7 @@ class AcctPageTest(AsyncTest):
                 'motto': 'motto test',
             })
             self.assertEqual(res.text, 'Eacces')
-            html = self.get_html('http://localhost:5501/acct/1', user_session)
+            html = self.get_html('acct/1', user_session)
             self.assertEqual(html.select_one('div#summary > h1').text, 'admin')
             self.assertNotEqual(html.select_one('script#contjs').attrs.get('photo'),
                                 'https://static.zerochan.net/Takakura.Anzu.full.1658390.jpg')
@@ -82,7 +82,7 @@ class AcctPageTest(AsyncTest):
             self.assertNotEqual(html.select_one('p').text, 'motto test')
 
             # test change password
-            res = user_session.post('http://localhost:5501/acctedit', data={
+            res = user_session.post('acctedit', data={
                 'reqtype': 'reset',
                 'acct_id': 2,
                 'old': 'test',
@@ -91,7 +91,7 @@ class AcctPageTest(AsyncTest):
             self.assertEqual(res.text, 'S')
 
             # test change password permission
-            res = user_session.post('http://localhost:5501/acctedit', data={
+            res = user_session.post('acctedit', data={
                 'reqtype': 'reset',
                 'acct_id': 1,
                 'old': 'test',
@@ -108,11 +108,11 @@ class AcctPageTest(AsyncTest):
 
         # test admin change password
         with AccountContext('admin@test', 'testtest') as admin_session:
-            html = self.get_html('http://localhost:5501/acctedit/2', admin_session)
+            html = self.get_html('acctedit/2', admin_session)
             self.assertIsNone(html.select_one('form#profile'))
             self.assertIsNotNone(html.select_one('form#reset'))
 
-            res = admin_session.post('http://localhost:5501/acctedit', data={
+            res = admin_session.post('acctedit', data={
                 'reqtype': 'reset',
                 'acct_id': 2,
                 'old': '',
@@ -121,6 +121,6 @@ class AcctPageTest(AsyncTest):
             self.assertEqual(res.text, 'S')
 
         with AccountContext('test1@test', 'test') as user_session:
-            html = self.get_html('http://localhost:5501/index/', user_session)
+            html = self.get_html('index/', user_session)
             self.assertIsNone(html.select_one('li.manage'))
             self.assertEqual(html.select_one('script#indexjs').attrs.get('acct_id'), '2')
