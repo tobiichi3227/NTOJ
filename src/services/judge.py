@@ -65,7 +65,7 @@ class JudgeServerService:
                     if 'score' in result:
                         try:
                             score = decimal.Decimal(result['score'])
-                        except decimal.DecimalException:
+                        except decimal.InvalidOperation:
                             score = None
                             result['status'] = ChalConst.STATE_SJE
 
