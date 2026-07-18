@@ -1,5 +1,105 @@
 'use strict';
 
+var colorTheme = new function() {
+    const STORAGE_KEY = 'theme';
+    const THEMES = ['light', 'dark', 'classic', 'auto'];
+    const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const getStoredTheme = function() {
+        try {
+            const theme = localStorage.getItem(STORAGE_KEY);
+            return THEMES.includes(theme) ? theme : null;
+        } catch (e) {
+            return null;
+        }
+    };
+
+    const getPreferredTheme = function() {
+        return getStoredTheme() || 'auto';
+    };
+
+    const getResolvedTheme = function(theme) {
+        if (theme === 'auto') {
+            return darkModeQuery.matches ? 'dark' : 'light';
+        }
+        return theme;
+    };
+
+    const setTheme = function(theme) {
+        document.documentElement.setAttribute('data-bs-theme', getResolvedTheme(theme));
+    };
+
+    const setStoredTheme = function(theme) {
+        try {
+            localStorage.setItem(STORAGE_KEY, theme);
+        } catch (e) {
+            // The selected theme still applies for the current page when storage is unavailable.
+        }
+    };
+
+    const showActiveTheme = function(theme) {
+        const themeToggle = document.getElementById('color-theme-toggle');
+        const themeIcon = document.getElementById('color-theme-icon');
+        const themeLabel = document.getElementById('color-theme-label');
+        if (!themeToggle || !themeIcon) {
+            return;
+        }
+
+        const themeMeta = {
+            light: {icon: 'fa-sun', label: 'Light'},
+            dark: {icon: 'fa-moon', label: 'Dark'},
+            classic: {icon: 'fa-terminal', label: 'Classic TOJ'},
+            auto: {icon: 'fa-circle-half-stroke', label: 'Auto'},
+        };
+        const activeTheme = themeMeta[theme];
+
+        document.querySelectorAll('[data-bs-theme-value]').forEach(function(button) {
+            const isActive = button.getAttribute('data-bs-theme-value') === theme;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            const check = button.querySelector('.color-theme-check');
+            if (check) {
+                check.classList.toggle('d-none', !isActive);
+            }
+        });
+
+        themeIcon.className = `fa-solid ${activeTheme.icon}`;
+        themeToggle.setAttribute('aria-label', `Toggle color theme (${activeTheme.label})`);
+        if (themeLabel) {
+            themeLabel.textContent = activeTheme.label;
+        }
+    };
+
+    this.init = function() {
+        showActiveTheme(getPreferredTheme());
+
+        document.querySelectorAll('[data-bs-theme-value]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const theme = button.getAttribute('data-bs-theme-value');
+                setStoredTheme(theme);
+                setTheme(theme);
+                showActiveTheme(theme);
+            });
+        });
+    };
+
+    darkModeQuery.addEventListener('change', function() {
+        if (getPreferredTheme() === 'auto') {
+            setTheme('auto');
+        }
+    });
+
+    window.addEventListener('storage', function(event) {
+        if (event.key === STORAGE_KEY) {
+            const theme = getPreferredTheme();
+            setTheme(theme);
+            showActiveTheme(theme);
+        }
+    });
+
+    setTheme(getPreferredTheme());
+};
+
 // from https://medium.com/enjoy-life-enjoy-coding/typescript-%E5%96%84%E7%94%A8-enum-%E6%8F%90%E9%AB%98%E7%A8%8B%E5%BC%8F%E7%9A%84%E5%8F%AF%E8%AE%80%E6%80%A7-%E5%9F%BA%E6%9C%AC%E7%94%A8%E6%B3%95-feat-javascript-b20d6bbbfe00
 const newEnum = (descriptions) => {
     const result = {};
@@ -246,6 +346,8 @@ var index = new function() {
         var j_navlist = $('#index-navlist');
         var acct_id;
         var contest_id;
+
+        colorTheme.init();
 
         $(document).on('click', 'a', function(e) {
             let cur_href = location.href;

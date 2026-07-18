@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-bs-theme="dark">
 
 <head>
   <title>New TNFSH Online Judge</title>
@@ -20,7 +20,7 @@
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="{{ url('/src/index.js') }}"></script>
   <script src="{{ url('/src/pack.js') }}"></script>
-  <script type="module"> import pdfjsDist from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/+esm' </script>
+  <script type="module"> import * as pdfjsDist from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/+esm' </script>
   <script>
     window.MathJax = {
       tex: {
@@ -140,7 +140,7 @@
 海に生き，海を守り，海を行く，それがブルーマーメード
 -->
 
-<body data-bs-theme="dark" class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100">
   <!-- style="background-color: #314783;" -->
   <nav class="navbar navbar-expand-lg">
     <div id="index-navlist" class="container-fluid">
@@ -231,7 +231,50 @@
         </ul>
         {% end %}
 
-        <ul class="navbar-nav ms-auto">
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+          <li class="nav-item dropdown">
+            <button
+              type="button"
+              class="nav-link dropdown-toggle d-flex align-items-center"
+              id="color-theme-toggle"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+              aria-label="Toggle color theme"
+            >
+              <i class="fa-solid fa-circle-half-stroke" id="color-theme-icon" aria-hidden="true"></i>
+              <span class="d-lg-none ms-2" id="color-theme-label">Theme</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="color-theme-toggle">
+              <li>
+                <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="false">
+                  <i class="fa-solid fa-sun me-2" aria-hidden="true"></i>
+                  Light
+                  <i class="fa-solid fa-check ms-auto d-none color-theme-check" aria-hidden="true"></i>
+                </button>
+              </li>
+              <li>
+                <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
+                  <i class="fa-solid fa-moon me-2" aria-hidden="true"></i>
+                  Dark
+                  <i class="fa-solid fa-check ms-auto d-none color-theme-check" aria-hidden="true"></i>
+                </button>
+              </li>
+              <li>
+                <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="classic" aria-pressed="false">
+                  <i class="fa-solid fa-terminal me-2" aria-hidden="true"></i>
+                  Classic TOJ
+                  <i class="fa-solid fa-check ms-auto d-none color-theme-check" aria-hidden="true"></i>
+                </button>
+              </li>
+              <li>
+                <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="auto" aria-pressed="false">
+                  <i class="fa-solid fa-circle-half-stroke me-2" aria-hidden="true"></i>
+                  Auto
+                  <i class="fa-solid fa-check ms-auto d-none color-theme-check" aria-hidden="true"></i>
+                </button>
+              </li>
+            </ul>
+          </li>
           <li class="nav-link sign" style="display: none;"><a href="{{ url('/sign/') }}">Reg | Log</a></li>
           <li class="nav-link leave" style="display: none;"><a href="#">Leave</a></li>
           <a class="nav-link account" href="{{ url(f'/acct/{ user.acct_id }/') }}" style="display: none;">{{ user.name }}</a>
