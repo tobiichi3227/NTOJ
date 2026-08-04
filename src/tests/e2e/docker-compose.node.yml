@@ -1,0 +1,49 @@
+services:
+  node-tests:
+    image: mcr.microsoft.com/playwright:v1.61.1-noble
+    init: true
+    ipc: host
+    working_dir: /work/e2e
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      NTOJ_E2E_BASE_URL: http://backend:5500
+      NTOJ_E2E_ADMIN_EMAIL: admin@admin
+      NTOJ_E2E_ADMIN_PASSWORD: admin1234
+      NTOJ_E2E_OUTPUT_DIR: ui-test-results
+      NTOJ_E2E_HTML_REPORT_DIR: ui-playwright-report
+    volumes:
+      - ./node:/work/e2e
+      - node_modules:/work/e2e/node_modules
+    ports:
+      - "127.0.0.1:${NTOJ_E2E_UI_PORT:-9323}:9323"
+    networks:
+      - app
+    command: >
+      bash -lc "npm ci --no-audit --no-fund &&
+      npx playwright test --ui-host=0.0.0.0 --ui-port=9323"
+
+  node-headless:
+    image: mcr.microsoft.com/playwright:v1.61.1-noble
+    init: true
+    ipc: host
+    working_dir: /work/e2e
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      NTOJ_E2E_BASE_URL: http://backend:5500
+      NTOJ_E2E_ADMIN_EMAIL: admin@admin
+      NTOJ_E2E_ADMIN_PASSWORD: admin1234
+    volumes:
+      - ./node:/work/e2e
+      - node_modules_headless:/work/e2e/node_modules
+    networks:
+      - app
+    command: >
+      bash -lc "npm ci --no-audit --no-fund && npx playwright test"
+
+volumes:
+  node_modules:
+  node_modules_headless:

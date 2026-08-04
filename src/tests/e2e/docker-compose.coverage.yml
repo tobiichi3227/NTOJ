@@ -1,0 +1,36 @@
+services:
+  backend:
+    environment:
+      COVERAGE_FILE: /coverage/python/suites/e2e/.coverage
+      NTOJ_COVERAGE_FILE: /coverage/python/suites/e2e/.coverage
+      NTOJ_COVERAGE_RCFILE: /ntoj/tests/e2e/python-coveragerc
+    volumes:
+      - ./coverage/python:/coverage/python
+      - ./python-coveragerc:/ntoj/tests/e2e/python-coveragerc:ro
+
+  node-tests:
+    environment:
+      NTOJ_E2E_WEB_COVERAGE: "1"
+      NTOJ_E2E_WEB_COVERAGE_DIR: /coverage/web
+      NTOJ_E2E_OUTPUT_DIR: test-results
+      NTOJ_E2E_HTML_REPORT_DIR: playwright-report
+    volumes:
+      - ./coverage:/coverage
+
+  node-headless:
+    environment:
+      NTOJ_E2E_WEB_COVERAGE: "1"
+      NTOJ_E2E_WEB_COVERAGE_DIR: /coverage/web
+      NTOJ_E2E_OUTPUT_DIR: test-results
+      NTOJ_E2E_HTML_REPORT_DIR: playwright-report
+    volumes:
+      - ./coverage:/coverage
+
+  coverage-report:
+    image: python:3.14-slim
+    working_dir: /coverage
+    volumes:
+      - ./coverage:/coverage
+    ports:
+      - "127.0.0.1:${NTOJ_E2E_COVERAGE_PORT:-9325}:9325"
+    command: python3 -m http.server 9325 --bind 0.0.0.0

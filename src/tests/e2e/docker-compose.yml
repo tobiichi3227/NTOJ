@@ -1,0 +1,81 @@
+name: ntoj-e2e
+
+services:
+  backend:
+    build:
+      context: ../../..
+      target: development
+    command: bash ./scripts/runserver.sh
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_started
+    ports:
+      - "${NTOJ_E2E_PORT:-5502}:5500"
+    volumes:
+      - static:/ntoj/static
+      - problem:/ntoj/problem
+      - code:/ntoj/code
+    networks:
+      - app
+      - judge
+
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ntoj
+      POSTGRES_PASSWORD: ntoj
+      POSTGRES_DB: ntoj
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ntoj -d ntoj"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - database:/var/lib/postgresql/18/docker
+    networks:
+      - app
+
+  cache:
+    image: redis:8-alpine
+    volumes:
+      - redis:/data
+    networks:
+      - app
+
+  judge-server:
+    profiles: ["judge"]
+    build: "${NTOJ_JUDGE_BUILD_CONTEXT:-https://github.com/tobiichi3227/NTOJ-Judge-Rewrite.git#333334293b97aa65f506ec1bab8bab320570228b}"
+    cap_add:
+      - MKNOD
+      - SYS_ADMIN
+      - SYS_CHROOT
+      - SYS_RESOURCE
+    cgroup: host
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+      - label:disable
+    tmpfs:
+      - /dev/shm:rw,exec,size=4G
+    volumes:
+      - problem:/problem:ro
+      - code:/code:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    networks:
+      judge:
+        aliases:
+          - judge
+
+volumes:
+  database:
+  redis:
+  static:
+  problem:
+  code:
+
+networks:
+  app:
+  judge:

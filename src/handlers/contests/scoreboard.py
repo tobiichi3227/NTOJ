@@ -161,7 +161,8 @@ class ContestScoreboardHandler(RequestHandler):
                     assert self.contest.contest_mode == ContestMode.ACM
                 elif score_type == ProblemScoreType.IOI2017:
                     s[pro_id] = await ContestService.inst.get_ioi2017_scores(contest_id, pro_id, end_time)
-                elif score_type == ProblemScoreType.IOI2013:
+                else:
+                    assert score_type == ProblemScoreType.IOI2013
                     s[pro_id] = await ContestService.inst.get_ioi2013_scores(contest_id, pro_id, end_time)
 
                 if not has_end_time:

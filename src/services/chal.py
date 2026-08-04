@@ -403,7 +403,9 @@ class ChalService:
         pro_id = int(pro_id)
         acct_id = int(acct_id)
 
-        _, pro = await ProService.inst.get_pro(pro_id, ProConst.PRO_STATUS_FULL)
+        err, pro = await ProService.inst.get_pro(pro_id, ProConst.PRO_STATUS_FULL)
+        if err:
+            return err, None
 
         # Dispatch to ProSpec
         # TODO: Support different problem types, for now only Batch

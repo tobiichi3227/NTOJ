@@ -1,0 +1,37 @@
+[run]
+branch = True
+sigterm = True
+parallel = True
+source = /ntoj
+omit =
+    /usr/*
+    */site-packages/*
+    */dist-packages/*
+    /ntoj/tests/*
+    /ntoj/scripts/*
+    /ntoj/migration/*
+    *.generated.py
+    /ntoj/server.py
+    /ntoj/config*.py
+    */runintegratedtest.py
+    */rununittest.py
+    */upgrade.py
+
+[report]
+precision = 2
+skip_empty = True
+omit =
+    config*.py
+    */config*.py
+    runintegratedtest.py
+    rununittest.py
+    upgrade.py
+    */runintegratedtest.py
+    */rununittest.py
+    */upgrade.py
+
+[html]
+directory = /coverage/python/html
+
+[json]
+output = /coverage/python/coverage.json

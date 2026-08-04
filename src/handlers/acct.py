@@ -17,9 +17,7 @@ from utils.numeric import parse_str_to_list
 
 PERMISSION_DENIED_ERROR = ("Eacces", "Permission denied")
 
-base_url = config.BASE_URL.removesuffix("/")
-if base_url == "":
-    base_url = "/"
+base_url = config.BASE_URL.removesuffix("/") or "/"
 
 
 class AcctHandler(RequestHandler):

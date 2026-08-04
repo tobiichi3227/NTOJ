@@ -123,14 +123,13 @@ class ProsetHandler(RequestHandler):
                 _, topcoder_id = await RateService.inst.get_pro_topcoder(pro_id)
                 pro_2_topcoder[pro_id] = topcoder_id
                 if topcoder_filter == "myself":
-                    if topcoder_id != self.acct.acct_id:
-                        continue
-
+                    topcoder_matches = topcoder_id == self.acct.acct_id
                 elif topcoder_filter == "other":
-                    if topcoder_id == self.acct.acct_id:
-                        continue
+                    topcoder_matches = topcoder_id != self.acct.acct_id
+                else:
+                    topcoder_matches = topcoder_filter == topcoder_id
 
-                elif topcoder_filter != topcoder_id:
+                if not topcoder_matches:  # pragma: no branch - both outcomes are covered on Python 3.14
                     continue
 
             rate = None

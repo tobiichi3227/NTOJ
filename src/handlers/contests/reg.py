@@ -66,7 +66,8 @@ class ContestRegHandler(RequestHandler):
         if self.contest.reg_mode is RegMode.FREE_REG:
             self.contest.user_list[acct_id] = {"status": UserStatus.APPROVED}
 
-        elif self.contest.reg_mode is RegMode.REG_APPROVAL:
+        else:
+            assert self.contest.reg_mode is RegMode.REG_APPROVAL
             self.contest.user_list[acct_id] = {"status": UserStatus.REQUESTED}
 
         await ContestService.inst.update_contest(

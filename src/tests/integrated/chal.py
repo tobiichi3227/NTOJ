@@ -283,10 +283,10 @@ class ChalListTest(AsyncTest):
             # Admin (owner) should receive full CE messages via WS for chal 4
             cookie_value = admin_session.cookies.get('id')
             headers = {"Cookie": f"id={cookie_value}"}
-            got_message = False
+            message_received = asyncio.Event()
             # Read messages and assert owner (admin) receives non-empty messages
             def _message2(msg):
-                nonlocal got_message
+
                 if msg is None:
                     return
                 data = json.loads(msg)
@@ -297,7 +297,7 @@ class ChalListTest(AsyncTest):
                     tr = payload['total_result']
                     self.assertGreater(len(tr.get('ce_message', '')), 0)
                     self.assertNotEqual(tr.get('message_type'), MessageType.NONE.value)
-                    got_message = True
+                    message_received.set()
                     return
 
             ws_admin = await websocket_connect(HTTPRequest('ws://localhost:5501/be/ws', headers=headers), on_message_callback=_message2)
@@ -308,10 +308,15 @@ class ChalListTest(AsyncTest):
                 res = admin_session.post('submit', data={'reqtype': 'rechal', 'chal_id': 4})
                 self.assertAPIReturnValue(res.text, ('S', 4))
 
-            await self.wait_for_judge_finish(callback3)
+            for _ in range(2):
+                await self.wait_for_judge_finish(callback3)
+                try:
+                    await asyncio.wait_for(message_received.wait(), timeout=3)
+                    break
+                except TimeoutError:
+                    continue
             ws_admin.close()
-            await asyncio.sleep(5) # HACK: workaround to ensure message is processed
-            self.assertTrue(got_message)
+            self.assertTrue(message_received.is_set())
 
             flt = ChalSearchingParamBuilder().build()
             err, challist = await ChalService.inst.list_chal(0, 20, flt)

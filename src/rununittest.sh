@@ -19,10 +19,9 @@ omit =
     upgrade.py
 EOF
 
-# remove old report record
-rm .coverage.*
-rm .coverage
-rm -r ./htmlcov
+# Remove old coverage artifacts. These may not exist on a clean CI runner.
+rm -f .coverage .coverage.*
+rm -rf ./htmlcov
 
 COVERAGE_PROCESS_START=.coveragerc $HOME/.local/bin/poetry run coverage run --branch --source=./ rununittest.py
 rc=$?

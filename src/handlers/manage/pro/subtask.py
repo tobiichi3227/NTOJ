@@ -84,9 +84,11 @@ class ManageProSubtaskHandler(RequestHandler):
             if dep_subtask_id not in subtask_configs:
                 return self.error(("Eparam", f"Dependency subtask {dep_subtask_id} not found"))
 
+        previous_dep_subtasks = subtask_configs[subtask_id].dependency_subtasks
         subtask_configs[subtask_id].dependency_subtasks = set(dep_subtasks)
 
         if self.have_cycle(subtask_configs):
+            subtask_configs[subtask_id].dependency_subtasks = previous_dep_subtasks
             return self.error(("Eparam", "Dependency subtasks have cycle"))
 
         await ProService.inst.update_pro_config(pro_id, pro.problem_type, pro.config)
@@ -206,9 +208,9 @@ class ManageProSubtaskHandler(RequestHandler):
         except ValueError:
             return self.error(("Eparam", "Invalid problem ID"))
         try:
-            testdata_id = int(self.get_argument("testdata_id"))
+            subtask_id = int(self.get_argument("subtask"))
         except ValueError:
-            return self.error(("Eparam", "Invalid testdata ID"))
+            return self.error(("Eparam", "Invalid subtask ID"))
         tags_str = self.get_argument("tags", default="").strip()
 
         err, pro = await ProService.inst.get_pro(pro_id, ProConst.PRO_STATUS_FULL)

@@ -1,0 +1,13 @@
+# Generated E2E artifacts are served from the workspace and must not be copied
+# into the backend image build context.
+src/tests/e2e/coverage/
+src/tests/e2e/deployment-artifacts/
+src/tests/e2e/node/node_modules/
+src/tests/e2e/node/playwright-report/
+src/tests/e2e/node/test-results/
+src/tests/e2e/node/ui-playwright-report/
+src/tests/e2e/node/ui-test-results/
+
+# Local Python test caches are also runtime-only.
+src/tests/e2e/python/.pytest_cache/
+src/tests/e2e/python/**/__pycache__/

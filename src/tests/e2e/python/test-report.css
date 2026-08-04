@@ -1,0 +1,88 @@
+:root {
+    --ntoj-bg: #07111f;
+    --ntoj-panel: #0d1b2d;
+    --ntoj-panel-alt: #12243a;
+    --ntoj-border: #24415f;
+    --ntoj-text: #dcecff;
+    --ntoj-muted: #8aa7c4;
+    --ntoj-accent: #38d9ff;
+    --ntoj-pass: #48e597;
+    --ntoj-fail: #ff6685;
+    --ntoj-skip: #f5c96a;
+}
+
+body {
+    background: radial-gradient(circle at top right, #123454 0, var(--ntoj-bg) 42%);
+    color: var(--ntoj-text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+}
+
+h1 {
+    color: var(--ntoj-accent);
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 24px rgb(56 217 255 / 35%);
+}
+
+a {
+    color: var(--ntoj-accent);
+}
+
+#environment,
+#results-table,
+.logwrapper {
+    background: rgb(13 27 45 / 92%);
+    border: 1px solid var(--ntoj-border);
+    border-radius: 12px;
+    box-shadow: 0 18px 55px rgb(0 0 0 / 25%);
+    overflow: hidden;
+}
+
+#results-table th {
+    background: var(--ntoj-panel-alt);
+    color: var(--ntoj-accent);
+}
+
+#results-table td {
+    border-color: var(--ntoj-border);
+    color: var(--ntoj-text);
+}
+
+.passed .col-result,
+.passed .col-result a {
+    color: var(--ntoj-pass);
+}
+
+.failed .col-result,
+.error .col-result,
+.failed .col-result a,
+.error .col-result a {
+    color: var(--ntoj-fail);
+}
+
+.skipped .col-result,
+.xfailed .col-result {
+    color: var(--ntoj-skip);
+}
+
+button,
+input,
+select {
+    background: var(--ntoj-panel-alt);
+    border: 1px solid var(--ntoj-border);
+    border-radius: 6px;
+    color: var(--ntoj-text);
+}
+
+.log {
+    background: #050b13;
+    color: #bcd5ef;
+}
+
+.summary__reload__button {
+    color: var(--ntoj-accent);
+}
+
+footer {
+    color: var(--ntoj-muted);
+}

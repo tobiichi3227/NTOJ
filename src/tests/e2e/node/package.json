@@ -1,0 +1,18 @@
+{
+  "name": "ntoj-playwright-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test": "playwright test",
+    "test:contest": "playwright test --grep @contest",
+    "test:judge": "playwright test --grep @judge",
+    "test:ui": "playwright test --ui",
+    "test:ui:docker": "playwright test --ui-host=0.0.0.0 --ui-port=9323",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}

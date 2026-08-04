@@ -515,7 +515,7 @@ class ProService:
 
                     if pro.status == ProConst.STATUS_HIDDEN:
                         res = await con.fetch('DELETE FROM contest_problem_joints WHERE pro_id = $1 RETURNING contest_id;', pro.pro_id)
-                        async with self.rs.pipeline() as pipe:
+                        async with self.rs.pipeline() as pipe:  # pragma: no branch
                             for r in res:
                                 contest_id = r['contest_id']
                                 await pipe.hdel(f"contest_{contest_id}_scores", str(pro.pro_id))

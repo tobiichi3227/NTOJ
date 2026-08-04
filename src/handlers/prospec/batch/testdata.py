@@ -100,9 +100,6 @@ class BatchTestdataHandler(RequestHandler):
         if testdata_id not in pro.config.testdatas:
             return self.error(("Enoext", "Testdata not found"))
 
-        if testdata_type not in ("output", "input"):
-            return self.error(("Eparam", "Invalid testdata file type"))
-
         if testdata_type == "input":
             filename = pro.config.testdatas[testdata_id].inputfile
         else:
@@ -156,10 +153,6 @@ class BatchTestdataHandler(RequestHandler):
 
         testdata = testdatas[testdata_id]
         assert isinstance(testdata, BatchTestdata)
-
-        if testdata_type not in ("output", "input"):
-            await PackService.inst.clear(pack_token)
-            return self.error(("Eparam", "Invalid testdata file type"))
 
         if testdata_type == "input":
             filename = testdata.inputfile

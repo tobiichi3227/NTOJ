@@ -35,10 +35,18 @@ then
     fi
 fi
 
-if [ -f docker-release ]; then
-    python3 server.py
+if [[ -n "${NTOJ_COVERAGE_FILE:-}" ]]; then
+    if [ ! -f docker-dev ]; then
+        echo "NTOJ_COVERAGE_FILE is supported only by the development image" >&2
+        exit 1
+    fi
+    export COVERAGE_FILE="$NTOJ_COVERAGE_FILE"
+    exec "$HOME/.local/bin/poetry" run coverage run \
+        --rcfile="${NTOJ_COVERAGE_RCFILE:-.coveragerc}" server.py
+elif [ -f docker-release ]; then
+    exec python3 server.py
 elif [ -f docker-dev ]; then
-    poetry run python3 server.py
+    exec "$HOME/.local/bin/poetry" run python3 server.py
 else
-    $HOME/.local/bin/poetry run python3 server.py --log_rotate_mode=time --log_file_prefix=/var/log/ntoj/access.log
+    exec "$HOME/.local/bin/poetry" run python3 server.py --log_rotate_mode=time --log_file_prefix=/var/log/ntoj/access.log
 fi

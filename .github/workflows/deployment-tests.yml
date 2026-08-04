@@ -1,0 +1,59 @@
+name: full-deployment-tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      python_coverage_min:
+        description: Minimum Python statement and branch coverage percentage
+        required: true
+        default: "100"
+        type: string
+  workflow_call:
+    inputs:
+      python_coverage_min:
+        description: Minimum Python statement and branch coverage percentage
+        required: false
+        default: "100"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: full-deployment-tests-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  full-system:
+    name: Playwright, unit, integration, and Judge
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      NTOJ_PYTHON_COVERAGE_MIN: ${{ inputs.python_coverage_min }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run deployment test entrypoint
+        run: |
+          chmod +x src/tests/e2e/run-coverage.sh
+          chmod +x src/tests/e2e/publish-total-coverage.sh
+          chmod +x src/tests/e2e/run-deployment-tests.sh
+          src/tests/e2e/run-deployment-tests.sh
+
+      - name: Upload Playwright, coverage, and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-test-artifacts-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: warn
+          retention-days: 14
+          include-hidden-files: true
+          path: |
+            src/tests/e2e/deployment-artifacts/
+            src/tests/e2e/node/playwright-report/
+            src/tests/e2e/node/test-results/
+            src/tests/e2e/coverage/

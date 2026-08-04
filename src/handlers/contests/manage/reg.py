@@ -63,13 +63,13 @@ class ContestManageRegHandler(RequestHandler):
             )
             return self.error(("S", f"Approve account(#{acct_id}) successfully."))
 
-        elif old_status == UserStatus.REJECTED:
-            await self.add_log(
-                f"{self.acct.name} approved rejected account #{acct_id}",
-                "contest.manage.reg.approval",
-                {"target_acct_id": acct_id}
-            )
-            return self.error(("S", f"Re-approve account(#{acct_id}) successfully."))
+        assert old_status == UserStatus.REJECTED
+        await self.add_log(
+            f"{self.acct.name} approved rejected account #{acct_id}",
+            "contest.manage.reg.approval",
+            {"target_acct_id": acct_id}
+        )
+        return self.error(("S", f"Re-approve account(#{acct_id}) successfully."))
 
     @contest_manage_reg_dispatcher.action("reject")
     async def reject_action(self):

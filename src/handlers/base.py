@@ -94,13 +94,6 @@ class RequestHandler(tornado.web.RequestHandler):
         self.finish(json.dumps({"status": err[0], "data": err[1]}, cls=encoder))
 
     async def render(self, templ, title: str | None ='', **kwargs):
-        class _encoder(json.JSONEncoder):
-            def default(self, o):
-                if isinstance(o, datetime.datetime):
-                    return o.isoformat()
-
-                else:
-                    return json.JSONEncoder.default(self, o)
 
         kwargs["user"] = self.acct
         kwargs["base_url"] = self.base_url
@@ -286,9 +279,6 @@ class UnifiedWebSocketHandler(tornado.websocket.WebSocketHandler):
                 await cls._shared_pubsub.subscribe(channel)
         # Perform sync registration first (fast and works during import)
         # and rely on async task to perform subscribe when loop is available
-        async def _sync_register():
-            async with cls._channel_callbacks_lock:
-                cls._channel_callbacks[channel] = callback_class
 
         loop = None
         try:
@@ -569,11 +559,6 @@ def reqenv(func):
         path = str(self.request.path)
         if (g := re.search(r"contests/(\d+)/?", path)) is not None:
             contest_id = g.group(1)
-            if not contest_id.isnumeric():
-                await self.finish(
-                    json.dumps({"status": "Eparam", "data": "Invalid contest_id"})
-                )
-                return
 
             _, self.contest = await ContestService.inst.get_contest(int(contest_id))
             if self.contest is None:

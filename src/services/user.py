@@ -297,8 +297,6 @@ class UserService:
         if name_len > UserConst.NAME_MAX:
             return ('Enamemax', 'Username too long'), None
         motto_len = len(acct.motto)
-        if motto_len < UserConst.MOTTO_MIN:
-            return ('Emottomin', 'Motto too short'), None
         if motto_len > UserConst.MOTTO_MAX:
             return ('Emottomax', 'Motto too long'), None
 

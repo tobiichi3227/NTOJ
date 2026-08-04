@@ -108,7 +108,8 @@ class Contest:
             if acct.acct_id not in self.user_list:
                 return False
 
-        elif isinstance(acct, int):
+        else:
+            assert isinstance(acct, int)
             acct_id = acct
             if acct not in self.user_list:
                 return False
