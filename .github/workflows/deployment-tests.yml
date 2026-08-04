@@ -2,7 +2,8 @@ name: full-deployment-tests
 
 on:
   push:
-    - e2e
+    branches:
+      - e2e
   workflow_dispatch:
     inputs:
       python_coverage_min:
