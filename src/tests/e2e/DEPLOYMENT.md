@@ -1,8 +1,8 @@
 # Deployment test gate
 
 The deployment entrypoint runs the complete test system: Node.js Playwright,
-Python unit coverage, the real integration suite, the privileged Judge, browser
-coverage, and the aggregate Python coverage gate.
+its TypeScript type check, Python unit coverage, the real integration suite,
+the privileged Judge, browser coverage, and the aggregate Python coverage gate.
 
 ## Host prerequisites
 
@@ -96,8 +96,8 @@ directories with a loopback-only HTTP server.
 
 ## Last verified run
 
-On 2026-08-04 the deployment entrypoint completed in 8 minutes 30 seconds with
-exit code 0. It reported 64 passed Playwright tests, 485 passed unit tests, a
+On 2026-08-05 the deployment entrypoint completed in 6 minutes 20 seconds with
+exit code 0. It reported 64 passed Playwright tests, 496 passed unit tests, a
 successful privileged Judge integration run, and 100.00% statement and branch
 coverage with zero missing items. All four recorded sub-stage exit codes were
 zero. Cleanup verification found no remaining containers, volumes, or networks

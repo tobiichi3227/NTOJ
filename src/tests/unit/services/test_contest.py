@@ -80,6 +80,53 @@ class TestContestService(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(error_group), 0)
         self.assertIn(10, self.test_contest.pro_list)
 
+    async def test_atomic_contest_user_add_success_duplicate_and_missing_account(self):
+        self.fake_conn.fetch.return_value = [{"acct_id": 2}]
+
+        self.assertEqual(
+            await self.service.add_contest_user(100, 2, UserStatus.APPROVED),
+            (None, None),
+        )
+        self.fake_rs.hdel.assert_awaited_once_with("contest", "100")
+        query = self.fake_conn.fetch.await_args.args[0]
+        self.assertIn("ON CONFLICT (contest_id, acct_id) DO NOTHING", query)
+        self.assertNotIn("DELETE", query)
+
+        self.fake_conn.fetch.reset_mock()
+        self.fake_rs.hdel.reset_mock()
+        self.fake_conn.fetch.return_value = []
+        self.assertEqual(
+            (await self.service.add_contest_user(100, 2, UserStatus.APPROVED))[0][0],
+            "Eexist",
+        )
+        self.fake_rs.hdel.assert_not_awaited()
+
+        self.fake_conn.fetch.side_effect = asyncpg.ForeignKeyViolationError(
+            "Account not found"
+        )
+        self.assertEqual(
+            (await self.service.add_contest_user(100, 999, UserStatus.APPROVED))[0][0],
+            "Enoext",
+        )
+
+    async def test_atomic_contest_user_remove_success_and_missing(self):
+        self.fake_conn.fetch.return_value = [{"acct_id": 2}]
+
+        self.assertEqual(
+            await self.service.remove_contest_user(100, 2),
+            (None, None),
+        )
+        self.fake_rs.hdel.assert_awaited_once_with("contest", "100")
+
+        self.fake_conn.fetch.reset_mock()
+        self.fake_rs.hdel.reset_mock()
+        self.fake_conn.fetch.return_value = []
+        self.assertEqual(
+            (await self.service.remove_contest_user(100, 2))[0][0],
+            "Enoext",
+        )
+        self.fake_rs.hdel.assert_not_awaited()
+
     async def test_update_contest_add_nonexistent_problem(self):
         """Test adding a non-existent problem returns error_group"""
         # Setup

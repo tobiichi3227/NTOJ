@@ -42,7 +42,7 @@ docker compose \
   -f src/tests/e2e/docker-compose.yml \
   -f src/tests/e2e/docker-compose.node.yml \
   run --rm --no-deps node-headless \
-  bash -lc "npm ci --no-audit --no-fund && npx playwright test --grep-invert @judge"
+  bash -lc "npm ci --no-audit --no-fund && npm run typecheck && npx playwright test --grep-invert @judge"
 ```
 
 To run only Contest coverage, append `--grep @contest` to the Playwright
@@ -74,7 +74,7 @@ docker compose \
   -f src/tests/e2e/docker-compose.node.yml \
   run --rm --no-deps \
   node-headless \
-  bash -lc "npm ci --no-audit --no-fund && npx playwright test --grep @judge"
+  bash -lc "npm ci --no-audit --no-fund && npm run typecheck && npx playwright test --grep @judge"
 ```
 
 The suite defaults to seeded problem `1`, promotes it to Online with submission

@@ -127,6 +127,8 @@ class Base(unittest.IsolatedAsyncioTestCase):
         self.contests = SimpleNamespace(
             update_contest=AsyncMock(return_value=([], None)),
             add_default_contest=AsyncMock(return_value=(None, 55)),
+            add_contest_user=AsyncMock(return_value=(None, None)),
+            remove_contest_user=AsyncMock(return_value=(None, None)),
         )
         self.users = SimpleNamespace(info_acct=AsyncMock())
         for service, value in (

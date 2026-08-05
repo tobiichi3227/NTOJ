@@ -1,3 +1,5 @@
+import asyncio
+import secrets
 import time
 import zlib
 
@@ -10,6 +12,16 @@ from services.contests import UserStatus
 
 
 submit_dispatcher = ActionDispatcher()
+
+SUBMIT_GUARD_LOCK_TTL_SECONDS = 5
+SUBMIT_GUARD_LOCK_RETRIES = 50
+SUBMIT_GUARD_LOCK_RETRY_DELAY_SECONDS = 0.02
+_RELEASE_SUBMIT_GUARD_SCRIPT = """
+if redis.call('get', KEYS[1]) == ARGV[1] then
+    return redis.call('del', KEYS[1])
+end
+return 0
+"""
 
 
 class BatchSubmitHandler(RequestHandler):
@@ -288,40 +300,66 @@ class BatchSubmitHandler(RequestHandler):
             and contest.member_is_status(self.acct, UserStatus.APPROVED)
         )
 
-        name = ""
-        crc32 = ""
-        if contest:
-            name = f"contest_{contest.contest_id}_acct_{self.acct.acct_id}_pro_{pro_id}_compiler_{compiler_type}"
-            crc32 = str(zlib.crc32(code.encode("utf-8")))
+        if contest is None and not should_check_submit_cd:
+            return None
 
-            if await self.rs.sismember(name, crc32):
-                return ("Esame", "Do not submit same code")
-
-        if should_check_submit_cd:
-            last_submit_name = f"last_submit_time_{self.acct.acct_id}"
-            if (last_submit_time := (await self.rs.get(last_submit_name))) is None:
-                if submit_cd_time:
-                    await self.rs.set(
-                        last_submit_name, int(time.time()), ex=submit_cd_time
-                    )
-
-            else:
-                last_submit_time = int(str(last_submit_time)[2:-1])
-                elapsed_time = int(time.time()) - last_submit_time
-                if elapsed_time < submit_cd_time:
-                    remaining_time = submit_cd_time - elapsed_time
-                    remaining_time = max(remaining_time, 0)
-                    return (
-                        "Einternal",
-                        f"Submit CD Time: {submit_cd_time} Secs, Remaining: {remaining_time} Secs",
-                    )
-                else:
-                    await self.rs.set(last_submit_name, int(time.time()))
-
-        if contest:
-            await self.rs.sadd(name, crc32)
-            await self.rs.expire(
-                name, time=(contest.contest_end - contest.contest_start)
+        lock_name = f"submit_guard_{self.acct.acct_id}"
+        lock_token = secrets.token_hex(16)
+        for _ in range(SUBMIT_GUARD_LOCK_RETRIES):
+            acquired = await self.rs.set(
+                lock_name,
+                lock_token,
+                nx=True,
+                ex=SUBMIT_GUARD_LOCK_TTL_SECONDS,
             )
+            if acquired:
+                break
+            await asyncio.sleep(SUBMIT_GUARD_LOCK_RETRY_DELAY_SECONDS)
+        else:
+            return ("Einternal", "Submit check is busy, please retry")
 
-        return None
+        try:
+            name = ""
+            crc32 = ""
+            if contest:
+                name = f"contest_{contest.contest_id}_acct_{self.acct.acct_id}_pro_{pro_id}_compiler_{compiler_type}"
+                crc32 = str(zlib.crc32(code.encode("utf-8")))
+
+                if await self.rs.sismember(name, crc32):
+                    return ("Esame", "Do not submit same code")
+
+            if should_check_submit_cd:
+                last_submit_name = f"last_submit_time_{self.acct.acct_id}"
+                if (last_submit_time := (await self.rs.get(last_submit_name))) is None:
+                    if submit_cd_time:
+                        await self.rs.set(
+                            last_submit_name, int(time.time()), ex=submit_cd_time
+                        )
+
+                else:
+                    last_submit_time = int(str(last_submit_time)[2:-1])
+                    elapsed_time = int(time.time()) - last_submit_time
+                    if elapsed_time < submit_cd_time:
+                        remaining_time = submit_cd_time - elapsed_time
+                        remaining_time = max(remaining_time, 0)
+                        return (
+                            "Einternal",
+                            f"Submit CD Time: {submit_cd_time} Secs, Remaining: {remaining_time} Secs",
+                        )
+                    else:
+                        await self.rs.set(last_submit_name, int(time.time()))
+
+            if contest:
+                await self.rs.sadd(name, crc32)
+                await self.rs.expire(
+                    name, time=(contest.contest_end - contest.contest_start)
+                )
+
+            return None
+        finally:
+            await self.rs.eval(
+                _RELEASE_SUBMIT_GUARD_SCRIPT,
+                1,
+                lock_name,
+                lock_token,
+            )

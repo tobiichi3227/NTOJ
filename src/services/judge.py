@@ -76,6 +76,21 @@ class JudgeServerService:
                 logger.error(f"Error handling response from judge server {self.server_name}: {e}", exc_info=True)
 
     async def response_handle(self, ret: str):
+        global update_chal_task_running_cnt
+        try:
+            await self._response_handle(ret)
+        except Exception as e:
+            logger.error(
+                f"Invalid response from judge server {self.server_name}: {e}",
+                exc_info=True,
+            )
+        finally:
+            update_chal_task_running_cnt = max(
+                0, update_chal_task_running_cnt - 1
+            )
+            self.event.set()
+
+    async def _response_handle(self, ret: str):
         from services.chal import ChalService, ChalConst, TotalResult, SubtaskResult, TestdataResult, MessageType
         res: dict = json.loads(ret)
 
@@ -170,7 +185,7 @@ class JudgeServerService:
                     ),
                 )
 
-            self.running_chal_cnt -= 1
+            self.running_chal_cnt = max(0, self.running_chal_cnt - 1)
             await self.rs.publish(
                 'judgechalcnt_sub',
                 json.dumps(
@@ -193,10 +208,6 @@ class JudgeServerService:
             await RateService.inst.refresh_pro_ac_rate(pro_id, contest_id)
             await RateService.inst.refresh_pro_topcoder(pro_id)
             self.chal_map.pop(res['chal_id'])
-
-        global update_chal_task_running_cnt
-        update_chal_task_running_cnt -= 1
-        self.event.set()
 
     async def disconnect_server(self):
         if not self.status:

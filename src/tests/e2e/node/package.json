@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "test": "playwright test",
     "test:contest": "playwright test --grep @contest",
     "test:judge": "playwright test --grep @judge",

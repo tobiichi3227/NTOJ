@@ -64,15 +64,17 @@ class ContestRegHandler(RequestHandler):
             )
 
         if self.contest.reg_mode is RegMode.FREE_REG:
-            self.contest.user_list[acct_id] = {"status": UserStatus.APPROVED}
-
+            status = UserStatus.APPROVED
         else:
             assert self.contest.reg_mode is RegMode.REG_APPROVAL
-            self.contest.user_list[acct_id] = {"status": UserStatus.REQUESTED}
+            status = UserStatus.REQUESTED
 
-        await ContestService.inst.update_contest(
-            self.acct, self.contest, userlist_updated=True
+        err, _ = await ContestService.inst.add_contest_user(
+            self.contest.contest_id, acct_id, status
         )
+        if err:
+            return self.error(err)
+        self.contest.user_list[acct_id] = {"status": status}
 
         await self.add_log(
             f"{self.acct.name} registered for contest '{self.contest.name}'",
@@ -103,10 +105,12 @@ class ContestRegHandler(RequestHandler):
                 )
             )
 
-        self.contest.user_list.pop(acct_id)
-        await ContestService.inst.update_contest(
-            self.acct, self.contest, userlist_updated=True
+        err, _ = await ContestService.inst.remove_contest_user(
+            self.contest.contest_id, acct_id
         )
+        if err:
+            return self.error(err)
+        self.contest.user_list.pop(acct_id, None)
         return self.error(("S", "Cancel Request Successfully"))
 
     @contest_reg_dispatcher.action("unreg")
@@ -137,10 +141,12 @@ class ContestRegHandler(RequestHandler):
                 )
             )
 
-        self.contest.user_list.pop(acct_id)
-        await ContestService.inst.update_contest(
-            self.acct, self.contest, userlist_updated=True
+        err, _ = await ContestService.inst.remove_contest_user(
+            self.contest.contest_id, acct_id
         )
+        if err:
+            return self.error(err)
+        self.contest.user_list.pop(acct_id, None)
 
         await self.add_log(
             f"{self.acct.name} unregistered from contest '{self.contest.name}'",

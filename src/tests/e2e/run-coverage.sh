@@ -172,7 +172,7 @@ run_required "wait for the NTOJ HTTP socket" wait_for_service_port 127.0.0.1 550
 current_phase=playwright
 "${compose[@]}" run --rm --no-deps \
   -e NTOJ_E2E_COVERAGE_OWNER=run-coverage node-headless \
-  bash -lc "npm ci --no-audit --no-fund && npx playwright test" || test_status=$?
+  bash -lc "npm ci --no-audit --no-fund && npm run typecheck && npm test" || test_status=$?
 
 # coverage.py writes in-process data when the server receives SIGTERM.
 current_phase=e2e-python-coverage

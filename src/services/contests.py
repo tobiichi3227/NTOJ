@@ -242,6 +242,49 @@ class ContestService:
 
         return None, contest_id
 
+    async def add_contest_user(
+        self, contest_id: int, acct_id: int, status: UserStatus
+    ):
+        try:
+            async with self.db.acquire() as con:
+                result = await con.fetch(
+                    '''
+                        INSERT INTO contest_users (contest_id, acct_id, status)
+                        VALUES ($1, $2, $3)
+                        ON CONFLICT (contest_id, acct_id) DO NOTHING
+                        RETURNING acct_id;
+                    ''',
+                    contest_id,
+                    acct_id,
+                    int(status),
+                )
+        except asyncpg.ForeignKeyViolationError:
+            return ("Enoext", f"Account {acct_id} not found"), None
+
+        if len(result) != 1:
+            return ("Eexist", "Account is already registered"), None
+
+        await self.rs.hdel("contest", str(contest_id))
+        return None, None
+
+    async def remove_contest_user(self, contest_id: int, acct_id: int):
+        async with self.db.acquire() as con:
+            result = await con.fetch(
+                '''
+                    DELETE FROM contest_users
+                    WHERE contest_id = $1 AND acct_id = $2
+                    RETURNING acct_id;
+                ''',
+                contest_id,
+                acct_id,
+            )
+
+        if len(result) != 1:
+            return ("Enoext", "Contest member not found"), None
+
+        await self.rs.hdel("contest", str(contest_id))
+        return None, None
+
     async def update_contest(self, acct: Account, contest: Contest, prolist_updated=False, userlist_updated=False):
         from services.pro import ProConst
         error_group = []

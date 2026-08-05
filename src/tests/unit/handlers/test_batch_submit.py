@@ -415,9 +415,15 @@ class TestBatchSubmitHandler(unittest.IsolatedAsyncioTestCase):
                 problem(),
             )
         )
-        cooldown_subject.rs.set.assert_not_awaited()
+        self.assertFalse(
+            any(
+                call.args
+                and str(call.args[0]).startswith("last_submit_time_")
+                for call in cooldown_subject.rs.set.await_args_list
+            )
+        )
         cooldown_subject.rs.sadd.assert_awaited_once()
-
+        cooldown_subject.rs.eval.assert_awaited_once()
 
     async def test_is_allow_submit_validation_cooldown_and_duplicate_branches(self):
         pro = problem()

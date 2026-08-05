@@ -1,0 +1,127 @@
+name: stress-tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: Disposable TOJ deployment URL
+        required: true
+        type: string
+      scenario:
+        description: Read-only, single-account Judge, or mixed OJ load
+        required: true
+        default: public-read
+        type: choice
+        options:
+          - public-read
+          - judge-submit
+          - oj-mixed
+      profile:
+        description: Load intensity
+        required: true
+        default: smoke
+        type: choice
+        options:
+          - smoke
+          - load
+          - stress
+      problem_id:
+        description: Seed problem ID for judge-submit
+        required: false
+        default: "1"
+        type: string
+      confirm_isolated:
+        description: I confirm the target is disposable and authorized for load testing
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stress-tests
+  cancel-in-progress: false
+
+jobs:
+  k6:
+    name: k6 ${{ inputs.scenario }} / ${{ inputs.profile }}
+    if: inputs.confirm_isolated
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_URL: ${{ inputs.target_url }}
+      CONFIRM_ISOLATED: "true"
+      PROBLEM_ID: ${{ inputs.problem_id }}
+      STRESS_ADMIN_EMAIL: ${{ secrets.STRESS_ADMIN_EMAIL }}
+      STRESS_ADMIN_PASSWORD: ${{ secrets.STRESS_ADMIN_PASSWORD }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Select load profile
+        shell: bash
+        run: |
+          case "${{ inputs.profile }}" in
+            smoke)
+              echo "VUS=5" >> "$GITHUB_ENV"
+              echo "RATE=1" >> "$GITHUB_ENV"
+              echo "DURATION=30s" >> "$GITHUB_ENV"
+              echo "NORMAL_USER_VUS=5" >> "$GITHUB_ENV"
+              echo "CONTEST_USER_VUS=3" >> "$GITHUB_ENV"
+              echo "CONTEST_COUNT=2" >> "$GITHUB_ENV"
+              echo "REJUDGE_TARGET_COUNT=4" >> "$GITHUB_ENV"
+              echo "REJUDGE_RATE=1" >> "$GITHUB_ENV"
+              echo "SCOREBOARD_RATE=2" >> "$GITHUB_ENV"
+              ;;
+            load)
+              echo "VUS=25" >> "$GITHUB_ENV"
+              echo "RATE=3" >> "$GITHUB_ENV"
+              echo "DURATION=2m" >> "$GITHUB_ENV"
+              echo "NORMAL_USER_VUS=30" >> "$GITHUB_ENV"
+              echo "CONTEST_USER_VUS=12" >> "$GITHUB_ENV"
+              echo "CONTEST_COUNT=3" >> "$GITHUB_ENV"
+              echo "REJUDGE_TARGET_COUNT=12" >> "$GITHUB_ENV"
+              echo "REJUDGE_RATE=1" >> "$GITHUB_ENV"
+              echo "SCOREBOARD_RATE=5" >> "$GITHUB_ENV"
+              ;;
+            stress)
+              echo "VUS=75" >> "$GITHUB_ENV"
+              echo "RATE=5" >> "$GITHUB_ENV"
+              echo "DURATION=5m" >> "$GITHUB_ENV"
+              echo "NORMAL_USER_VUS=100" >> "$GITHUB_ENV"
+              echo "CONTEST_USER_VUS=25" >> "$GITHUB_ENV"
+              echo "CONTEST_COUNT=5" >> "$GITHUB_ENV"
+              echo "REJUDGE_TARGET_COUNT=30" >> "$GITHUB_ENV"
+              echo "REJUDGE_RATE=2" >> "$GITHUB_ENV"
+              echo "SCOREBOARD_RATE=10" >> "$GITHUB_ENV"
+              ;;
+          esac
+
+      - name: Validate Judge stress secrets
+        if: inputs.scenario != 'public-read'
+        shell: bash
+        run: |
+          if [[ -z "$STRESS_ADMIN_EMAIL" || -z "$STRESS_ADMIN_PASSWORD" ]]; then
+            echo "STRESS_ADMIN_EMAIL and STRESS_ADMIN_PASSWORD secrets are required" >&2
+            exit 2
+          fi
+          echo "CONFIRM_JUDGE_STRESS=true" >> "$GITHUB_ENV"
+
+      - name: Run k6 profile
+        shell: bash
+        env:
+          RESULTS_DIR: ${{ github.workspace }}/stress-results
+          STRESS_RUN_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          chmod +x src/tests/stress/run-k6.sh
+          src/tests/stress/run-k6.sh "${{ inputs.scenario }}"
+
+      - name: Upload k6 summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-${{ inputs.scenario }}-${{ inputs.profile }}
+          path: stress-results/
+          if-no-files-found: warn

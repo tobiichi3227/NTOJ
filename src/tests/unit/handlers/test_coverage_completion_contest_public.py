@@ -248,6 +248,52 @@ class TestContestRegistration(Base):
         self.assertEqual(await method(subject), ("S", "Register Successfully"))
         self.assertEqual(value.user_list[7]["status"], UserStatus.REQUESTED)
 
+    async def test_registration_uses_atomic_membership_operations(self):
+        value = registration_contest()
+        self.assertEqual(
+            await ContestRegHandler.register_action(Subject(value)),
+            ("S", "Register Successfully"),
+        )
+        self.contests.add_contest_user.assert_awaited_once_with(
+            9, 7, UserStatus.APPROVED
+        )
+        self.contests.update_contest.assert_not_awaited()
+
+        self.contests.add_contest_user.return_value = (("Edb", "failed"), None)
+        self.assertEqual(
+            (await ContestRegHandler.register_action(Subject(registration_contest())))[0],
+            "Edb",
+        )
+        self.contests.add_contest_user.return_value = (None, None)
+
+        requested = registration_contest(
+            reg_mode=RegMode.REG_APPROVAL,
+            user_list={7: {"status": UserStatus.REQUESTED}},
+        )
+        self.assertEqual(
+            await ContestRegHandler.cancel_request_action(Subject(requested)),
+            ("S", "Cancel Request Successfully"),
+        )
+        self.contests.remove_contest_user.assert_awaited_with(9, 7)
+
+        self.contests.remove_contest_user.return_value = (("Edb", "failed"), None)
+        requested = registration_contest(
+            reg_mode=RegMode.REG_APPROVAL,
+            user_list={7: {"status": UserStatus.REQUESTED}},
+        )
+        self.assertEqual(
+            (await ContestRegHandler.cancel_request_action(Subject(requested)))[0],
+            "Edb",
+        )
+
+        approved = registration_contest(
+            user_list={7: {"status": UserStatus.APPROVED}}
+        )
+        self.assertEqual(
+            (await ContestRegHandler.unregister_action(Subject(approved)))[0],
+            "Edb",
+        )
+
     async def test_cancel_request_paths(self):
         method = ContestRegHandler.cancel_request_action
         value = registration_contest(reg_mode=RegMode.INVITED)

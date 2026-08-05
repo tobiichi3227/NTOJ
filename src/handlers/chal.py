@@ -254,7 +254,12 @@ class ChalStateCallback:
             return None
         chal: Challenge = state['chal']
 
-        msg_data = json.loads(data)
+        try:
+            msg_data = json.loads(data)
+        except (json.JSONDecodeError, TypeError):
+            return None
+        if not isinstance(msg_data, dict):
+            return None
         if msg_data.get('chal_id') != chal.chal_id:
             return None  # Skip this connection
 
@@ -274,33 +279,32 @@ class ChalStateCallback:
 
         def sanitize():
             nonlocal msg_data
-            try:
-                if 'total_result' in msg_data:
-                    assert isinstance(msg_data['total_result'], dict)
-                    total_result = msg_data['total_result']
-                    total_result['ce_message'] = ''
-                    total_result['ie_message'] = ''
-                    total_result['message_type'] = MessageType.NONE.value
 
-                if 'testdata_results' in msg_data:
-                    assert isinstance(msg_data['testdata_results'], dict)
-                    for td in msg_data['testdata_results'].values():
-                        if isinstance(td, dict):
-                            td['message'] = ''
-                            td['message_type'] = MessageType.NONE.value
+            total_result = msg_data.get('total_result')
+            if isinstance(total_result, dict):
+                total_result['ce_message'] = ''
+                total_result['ie_message'] = ''
+                total_result['message_type'] = MessageType.NONE.value
+            elif 'total_result' in msg_data:
+                del msg_data['total_result']
 
-                if 'message' in msg_data:
-                    msg_data['message'] = ''
-                    if 'message_type' in msg_data:
-                        msg_data['message_type'] = MessageType.NONE.value
-            except Exception:
-                # In case of any unexpected data structure, fail-safe to not reveal data
-                if 'message' in msg_data:
-                    msg_data['message'] = ''
-                if 'total_result' in msg_data and isinstance(msg_data['total_result'], dict):
-                    msg_data['total_result']['ce_message'] = ''
-                    msg_data['total_result']['ie_message'] = ''
-                    msg_data['total_result']['message_type'] = MessageType.NONE.value
+            testdata_results = msg_data.get('testdata_results')
+            if isinstance(testdata_results, dict):
+                sanitized_testdata_results = {}
+                for testdata_id, testdata_result in testdata_results.items():
+                    if not isinstance(testdata_result, dict):
+                        continue
+                    testdata_result['message'] = ''
+                    testdata_result['message_type'] = MessageType.NONE.value
+                    sanitized_testdata_results[testdata_id] = testdata_result
+                msg_data['testdata_results'] = sanitized_testdata_results
+            elif 'testdata_results' in msg_data:
+                del msg_data['testdata_results']
+
+            if 'message' in msg_data:
+                msg_data['message'] = ''
+                if 'message_type' in msg_data:
+                    msg_data['message_type'] = MessageType.NONE.value
             return msg_data
 
         async def apply_challenge_style(style: int):

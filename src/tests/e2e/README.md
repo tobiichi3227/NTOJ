@@ -50,7 +50,7 @@ docker compose \
   -f src/tests/e2e/docker-compose.yml \
   -f src/tests/e2e/docker-compose.node.yml \
   run --rm --no-deps node-headless \
-  bash -lc "npm ci --no-audit --no-fund && npx playwright test --grep-invert @judge"
+  bash -lc "npm ci --no-audit --no-fund && npm run typecheck && npx playwright test --grep-invert @judge"
 ```
 
 Useful filters:
@@ -109,6 +109,7 @@ Docker is the reproducible default. To run with a local Node.js installation:
 cd src/tests/e2e/node
 npm ci
 npx playwright install chromium
+npm run typecheck
 NTOJ_E2E_BASE_URL=http://127.0.0.1:5502 npm test
 ```
 
